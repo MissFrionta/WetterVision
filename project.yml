@@ -1,0 +1,22 @@
+name: WetterVision
+options:
+  bundleIdPrefix: de.wh.d3d
+  deploymentTarget:
+    visionOS: "2.0"
+  xcodeVersion: "16.0"
+
+targets:
+  WetterVision:
+    type: application
+    platform: visionOS
+    sources:
+      - WetterVision
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.wh.d3d.WetterVision
+        PRODUCT_NAME: WetterVision
+        INFOPLIST_FILE: WetterVision/Info.plist
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: 7
+        SUPPORTED_PLATFORMS: xros
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
