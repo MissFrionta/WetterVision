@@ -6,7 +6,7 @@ struct WetterVisionApp: App {
 
     var body: some Scene {
         WindowGroup(id: "main-volume") {
-            ContentView()
+            ModeSelectionView()
                 .environmentObject(viewModel)
         }
         .windowStyle(.volumetric)

@@ -2,7 +2,13 @@ import SwiftUI
 import RealityKit
 import Spatial
 
+enum AppMode: String, CaseIterable {
+    case classic = "Klassisch"
+    case diorama = "Diorama"
+}
+
 class WeatherViewModel: ObservableObject {
+    @Published var appMode: AppMode?
     @Published var selectedCityIndex: Int = 0
     @Published var dioramaRotation: Rotation3D = .identity
     @Published var dioramaScale: Double = 1.0

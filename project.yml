@@ -11,6 +11,10 @@ targets:
     platform: visionOS
     sources:
       - WetterVision
+    resources:
+      - path: WetterVision/Assets
+        excludes:
+          - "*.md"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: de.wh.d3d.WetterVision
