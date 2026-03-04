@@ -48,3 +48,16 @@ The root entity has `InputTargetComponent` + `CollisionComponent` for gesture ta
 - **Particles:** Rain and snow use `ParticleEmitterComponent` directly on entities (no `.particleEmitter` preset files).
 - **Scale clamping:** Pinch gesture is clamped to 0.5×–2.0× in the ViewModel.
 - **Language:** UI text is in German (city names, weather condition labels). Code (variable names, comments) is in English.
+
+## Status (2026-03-04)
+
+- VoxelBuilder.swift wurde hinzugefügt, DioramaBuilder temporär umgeleitet — funktioniert aber wegen Xcode-Projektstruktur-Problemen nicht zuverlässig
+- **Neuer Plan:** Separates, minimales visionOS-Projekt ("VoxelWorld") für Voxel/Pixel-Art Prototyp erstellen
+- Strategie: Klein anfangen, schrittweise aufbauen, Fokus auf visuelles Ergebnis
+- Zeitdruck — schnelle Iteration, Prototyp muss gut aussehen
+
+## Workflow
+
+- Code wird auf Windows per Claude Code geschrieben und per Git gepusht
+- Auf Mac: git pull, in Xcode öffnen, builden, im visionOS-Simulator testen
+- **Kein XcodeGen** — User arbeitet direkt in Xcode, nicht über Terminal
