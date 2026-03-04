@@ -1,34 +1,16 @@
-//
-//  WetterVisionApp.swift
-//  WetterVision
-//
-//  Created by MPC-Lab-3 on 04.03.26.
-//
-
+// Test-Kommentar
 import SwiftUI
 
 @main
 struct WetterVisionApp: App {
-
-    @State private var appModel = AppModel()
+    @StateObject private var viewModel = WeatherViewModel()
 
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environment(appModel)
+        WindowGroup(id: "main-volume") {
+            ModeSelectionView()
+                .environmentObject(viewModel)
         }
         .windowStyle(.volumetric)
-
-        ImmersiveSpace(id: appModel.immersiveSpaceID) {
-            ImmersiveView()
-                .environment(appModel)
-                .onAppear {
-                    appModel.immersiveSpaceState = .open
-                }
-                .onDisappear {
-                    appModel.immersiveSpaceState = .closed
-                }
-        }
-        .immersionStyle(selection: .constant(.full), in: .full)
+        .defaultSize(width: 0.8, height: 0.6, depth: 0.8, in: .meters)
     }
 }

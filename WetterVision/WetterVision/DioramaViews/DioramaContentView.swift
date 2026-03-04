@@ -1,16 +1,16 @@
 import SwiftUI
 import RealityKit
 
-struct ContentView: View {
+struct DioramaContentView: View {
     @EnvironmentObject var viewModel: WeatherViewModel
 
     var body: some View {
-        DioramaRealityView()
+        DioramaDioramaView()
             .environmentObject(viewModel)
             .ornament(attachmentAnchor: .scene(.bottom)) {
                 VStack(spacing: 12) {
-                    CityPickerView()
-                    WeatherInfoPanel()
+                    DioramaCityPicker()
+                    DioramaWeatherPanel()
                 }
                 .padding(16)
                 .glassBackgroundEffect()
