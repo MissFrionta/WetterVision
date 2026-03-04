@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CityPickerView: View {
-    @EnvironmentObject var viewModel: WeatherViewModel
+    @Environment(WeatherViewModel.self) var viewModel
 
     var body: some View {
         HStack(spacing: 10) {

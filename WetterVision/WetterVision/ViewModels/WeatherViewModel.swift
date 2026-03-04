@@ -7,12 +7,13 @@ enum AppMode: String, CaseIterable {
     case diorama = "Diorama"
 }
 
+@Observable
 @MainActor
-class WeatherViewModel: ObservableObject {
-    @Published var appMode: AppMode?
-    @Published var selectedCityIndex: Int = 0
-    @Published var dioramaRotation: Rotation3D = .identity
-    @Published var dioramaScale: Double = 1.0
+class WeatherViewModel {
+    var appMode: AppMode?
+    var selectedCityIndex: Int = 0
+    var dioramaRotation: Rotation3D = .identity
+    var dioramaScale: Double = 1.0
 
     // Base values stored when gesture ends
     var baseRotation: Rotation3D = .identity

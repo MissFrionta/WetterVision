@@ -2,11 +2,11 @@ import SwiftUI
 import RealityKit
 
 struct ContentView: View {
-    @EnvironmentObject var viewModel: WeatherViewModel
+    @Environment(WeatherViewModel.self) var viewModel
 
     var body: some View {
         DioramaRealityView()
-            .environmentObject(viewModel)
+            .environment(viewModel)
             .ornament(attachmentAnchor: .scene(.bottom)) {
                 VStack(spacing: 12) {
                     CityPickerView()
@@ -14,7 +14,7 @@ struct ContentView: View {
                 }
                 .padding(16)
                 .glassBackgroundEffect()
-                .environmentObject(viewModel)
+                .environment(viewModel)
             }
     }
 }

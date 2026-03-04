@@ -3,7 +3,7 @@ import RealityKit
 import Spatial
 
 struct DioramaGestures: ViewModifier {
-    @EnvironmentObject var viewModel: WeatherViewModel
+    @Environment(WeatherViewModel.self) var viewModel
 
     func body(content: Content) -> some View {
         content

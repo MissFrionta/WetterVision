@@ -1,17 +1,17 @@
 import SwiftUI
 
 struct ModeSelectionView: View {
-    @EnvironmentObject var viewModel: WeatherViewModel
+    @Environment(WeatherViewModel.self) var viewModel
 
     var body: some View {
         if let mode = viewModel.appMode {
             switch mode {
             case .classic:
                 ContentView()
-                    .environmentObject(viewModel)
+                    .environment(viewModel)
             case .diorama:
                 DioramaContentView()
-                    .environmentObject(viewModel)
+                    .environment(viewModel)
             }
         } else {
             modeSelection

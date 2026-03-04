@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DioramaCityPicker: View {
-    @EnvironmentObject var viewModel: WeatherViewModel
+    @Environment(WeatherViewModel.self) var viewModel
 
     var body: some View {
         HStack(spacing: 10) {

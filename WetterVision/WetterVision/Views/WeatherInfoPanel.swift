@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct WeatherInfoPanel: View {
-    @EnvironmentObject var viewModel: WeatherViewModel
+    @Environment(WeatherViewModel.self) var viewModel
 
     var body: some View {
         let weather = viewModel.currentWeather

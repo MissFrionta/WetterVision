@@ -3,7 +3,7 @@ import RealityKit
 import Spatial
 
 struct DioramaDioramaView: View {
-    @EnvironmentObject var viewModel: WeatherViewModel
+    @Environment(WeatherViewModel.self) var viewModel
 
     @State private var rootEntity = Entity()
     @State private var contentEntity: Entity?
