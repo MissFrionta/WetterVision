@@ -13,7 +13,6 @@ class SnowSystem {
         particles.mainEmitter.birthRate = 100
         particles.mainEmitter.lifeSpan = 3.0
         particles.speed = 0.03
-        particles.mainEmitter.birthDirection = .local
         particles.mainEmitter.size = 0.004
         particles.mainEmitter.color = .constant(.single(.white))
         particles.mainEmitter.acceleration = SIMD3<Float>(0.01, -0.05, 0.005)
