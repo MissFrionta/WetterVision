@@ -15,7 +15,7 @@ struct DioramaGestures: ViewModifier {
         RotateGesture3D()
             .targetedToAnyEntity()
             .onChanged { value in
-                let rotation = Rotation3D(value.rotation)
+                let rotation = value.rotation
                 viewModel.updateRotation(by: rotation)
             }
             .onEnded { _ in
