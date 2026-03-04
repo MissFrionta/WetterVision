@@ -3,6 +3,9 @@ import Foundation
 
 class DioramaBuilder {
     static func build(for weather: WeatherData) -> Entity {
+        // TEMP: Voxel demo — remove this block to restore normal diorama
+        return VoxelBuilder.buildDemo()
+
         let root = Entity()
         root.name = "DioramaContent"
 
