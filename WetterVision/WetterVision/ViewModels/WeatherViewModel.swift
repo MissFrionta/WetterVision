@@ -7,6 +7,7 @@ enum AppMode: String, CaseIterable {
     case diorama = "Diorama"
 }
 
+@MainActor
 class WeatherViewModel: ObservableObject {
     @Published var appMode: AppMode?
     @Published var selectedCityIndex: Int = 0
