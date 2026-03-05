@@ -3,8 +3,8 @@
 **Kurs:** Design für 3D User Interfaces (D3D), WS 25/26
 **Dozent:** Prof. Dr.-Ing. Sebastian Büttner
 **Hochschule:** Westfälische Hochschule, FB Informatik und Kommunikation
-**Gruppe:** [Namen der Gruppenmitglieder eintragen]
-**Datum:** [Abgabedatum eintragen]
+**Bearbeitung:** Einzelarbeit
+**Datum:** WS 2025/26
 
 ---
 
