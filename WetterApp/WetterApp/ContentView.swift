@@ -6,9 +6,13 @@ struct ContentView: View {
     @State private var cities = CityData.defaultCities
     @State private var selectedCity: City?
 
-    // Globe rotation tracking
-    @State private var currentRotation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
-    @State private var dragStartRotation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
+    // Globe rotation
+    @State private var globeRotation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
+    @State private var globeDragStart: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
+
+    // Snow globe rotation (separate from earth globe)
+    @State private var snowGlobeRotation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
+    @State private var snowGlobeDragStart: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
 
     @State private var globeEntity: Entity?
     @State private var snowGlobeEntity: Entity?
@@ -18,7 +22,7 @@ struct ContentView: View {
             let root = Entity()
             root.name = "scene-root"
 
-            // -- Globe (left side when snow globe is visible, centered otherwise) --
+            // -- Globe --
             let globe = GlobeBuilder.buildGlobe(cities: cities)
             globe.name = "globe-container"
             globeEntity = globe
@@ -40,19 +44,20 @@ struct ContentView: View {
 
             content.add(root)
         } update: { content, attachments in
-            // Apply globe rotation
+            // Apply globe rotation + position
             if let globe = globeEntity {
-                globe.orientation = currentRotation
+                globe.orientation = globeRotation
+                globe.position.x = selectedCity != nil ? -0.20 : 0.0
+            }
 
-                // Shift globe left when a city is selected, center when not
-                let targetX: Float = selectedCity != nil ? -0.20 : 0.0
-                globe.position.x = targetX
+            // Apply snow globe rotation
+            if let sg = snowGlobeEntity {
+                sg.orientation = snowGlobeRotation
             }
 
             // Show/hide snow globe
             updateSnowGlobe(content: content, attachments: attachments)
         } attachments: {
-            // City name labels on globe
             ForEach(cities) { city in
                 Attachment(id: "label-\(city.name)") {
                     Text(city.name)
@@ -64,29 +69,35 @@ struct ContentView: View {
                 }
             }
 
-            // Weather info panel (attached to snow globe)
             if let city = selectedCity {
                 Attachment(id: "weather-panel") {
                     WeatherPanelView(city: city)
                 }
             }
         }
-        // Drag gesture for globe rotation
+        // Drag gesture — rotates whichever entity is dragged
         .gesture(
             DragGesture()
                 .targetedToAnyEntity()
                 .onChanged { value in
                     let translation = value.translation3D
-                    let horizontalAngle = Float(translation.x) * 0.005
-                    let verticalAngle = Float(translation.y) * -0.005
+                    let hAngle = Float(translation.x) * 0.005
+                    let vAngle = Float(translation.y) * -0.005
+                    let yaw = simd_quatf(angle: hAngle, axis: SIMD3(0, 1, 0))
+                    let pitch = simd_quatf(angle: vAngle, axis: SIMD3(1, 0, 0))
 
-                    let yawRotation = simd_quatf(angle: horizontalAngle, axis: SIMD3(0, 1, 0))
-                    let pitchRotation = simd_quatf(angle: verticalAngle, axis: SIMD3(1, 0, 0))
-
-                    currentRotation = yawRotation * pitchRotation * dragStartRotation
+                    if isDragOnSnowGlobe(value.entity) {
+                        snowGlobeRotation = yaw * pitch * snowGlobeDragStart
+                    } else {
+                        globeRotation = yaw * pitch * globeDragStart
+                    }
                 }
-                .onEnded { _ in
-                    dragStartRotation = currentRotation
+                .onEnded { value in
+                    if isDragOnSnowGlobe(value.entity) {
+                        snowGlobeDragStart = snowGlobeRotation
+                    } else {
+                        globeDragStart = globeRotation
+                    }
                 }
         )
         // Tap gesture for pin selection
@@ -97,17 +108,34 @@ struct ContentView: View {
                     let tappedName = value.entity.name
                     if tappedName.hasPrefix("pin-head-") {
                         let cityName = String(tappedName.dropFirst("pin-head-".count))
-                        withAnimation(.easeInOut(duration: 0.4)) {
-                            selectedCity = cities.first { $0.name == cityName }
-                        }
+                        selectCity(named: cityName)
                     } else if tappedName.hasPrefix("pin-") && !tappedName.hasPrefix("pin-head-") {
                         let cityName = String(tappedName.dropFirst("pin-".count))
-                        withAnimation(.easeInOut(duration: 0.4)) {
-                            selectedCity = cities.first { $0.name == cityName }
-                        }
+                        selectCity(named: cityName)
                     }
                 }
         )
+    }
+
+    // MARK: - Helpers
+
+    private func selectCity(named cityName: String) {
+        // Reset snow globe rotation when switching cities
+        snowGlobeRotation = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
+        snowGlobeDragStart = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
+        selectedCity = cities.first { $0.name == cityName }
+    }
+
+    /// Check if the dragged entity belongs to the snow globe (by walking up the hierarchy).
+    private func isDragOnSnowGlobe(_ entity: Entity) -> Bool {
+        var current: Entity? = entity
+        while let e = current {
+            if e.name.hasPrefix("snowglobe-") || e.name == "globe-glass" {
+                return true
+            }
+            current = e.parent
+        }
+        return false
     }
 
     // MARK: - Snow Globe Management
@@ -120,10 +148,10 @@ struct ContentView: View {
                 snowGlobeEntity = nil
             }
 
-            // Create new snow globe if needed
+            // Create new snow globe
             if snowGlobeEntity == nil {
                 let newGlobe = VoxelBuilder.buildSnowGlobe(for: city.name)
-                newGlobe.position = SIMD3<Float>(0.20, 0.0, 0.0) // right side
+                newGlobe.position = SIMD3<Float>(0.20, 0.0, 0.0)
                 newGlobe.scale = SIMD3<Float>(repeating: 0.85)
 
                 if let root = globeEntity?.parent {
@@ -131,7 +159,7 @@ struct ContentView: View {
                 }
                 snowGlobeEntity = newGlobe
 
-                // Attach weather panel below snow globe
+                // Attach weather panel
                 if let panel = attachments.entity(for: "weather-panel") {
                     panel.position = SIMD3<Float>(0, -0.24, 0)
                     panel.components.set(BillboardComponent())
@@ -139,7 +167,6 @@ struct ContentView: View {
                 }
             }
         } else {
-            // No city selected — remove snow globe
             snowGlobeEntity?.removeFromParent()
             snowGlobeEntity = nil
         }

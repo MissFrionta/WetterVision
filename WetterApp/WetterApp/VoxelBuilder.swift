@@ -81,6 +81,7 @@ struct VoxelBuilder {
         let mesh = MeshResource.generateBox(size: block)
 
         let scene = Entity()
+        scene.name = "voxel-scene"
         switch cityName {
         case "Berlin":   buildBerlinScene(in: scene, mesh: mesh)
         case "New York": buildNewYorkScene(in: scene, mesh: mesh)
@@ -92,13 +93,22 @@ struct VoxelBuilder {
         scene.position.y = -0.07
         root.addChild(scene)
 
+        // Weather effects based on dummy data
+        if let weather = CityData.dummyWeather[cityName] {
+            WeatherEffects.apply(condition: weather.condition, to: root)
+        }
+
         // Glass sphere
         let globeMesh = MeshResource.generateSphere(radius: 0.17)
         var glassMat = SimpleMaterial()
         glassMat.color = .init(tint: UIColor(white: 1.0, alpha: 0.08))
         glassMat.metallic = .init(floatLiteral: 1.0)
         glassMat.roughness = .init(floatLiteral: 0.0)
-        root.addChild(ModelEntity(mesh: globeMesh, materials: [glassMat]))
+        let globe = ModelEntity(mesh: globeMesh, materials: [glassMat])
+        globe.name = "globe-glass"
+        globe.components.set(InputTargetComponent())
+        globe.generateCollisionShapes(sizes: [.init(repeating: 0.34)])
+        root.addChild(globe)
 
         // Wooden base
         let baseMat = SimpleMaterial(color: Palette.globeBase, isMetallic: false)
