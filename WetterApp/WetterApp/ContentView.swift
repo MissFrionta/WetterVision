@@ -14,6 +14,12 @@ struct ContentView: View {
     @State private var snowGlobeRotation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
     @State private var snowGlobeDragStart: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
 
+    // Scale tracking (pinch gesture)
+    @State private var globeScale: Float = 1.0
+    @State private var globePinchStart: Float = 1.0
+    @State private var snowGlobeScale: Float = 0.85  // base scale for snow globe
+    @State private var snowGlobePinchStart: Float = 0.85
+
     @State private var globeEntity: Entity?
     @State private var snowGlobeEntity: Entity?
 
@@ -44,15 +50,17 @@ struct ContentView: View {
 
             content.add(root)
         } update: { content, attachments in
-            // Apply globe rotation + position
+            // Apply globe rotation + position + scale
             if let globe = globeEntity {
                 globe.orientation = globeRotation
                 globe.position.x = selectedCity != nil ? -0.20 : 0.0
+                globe.scale = SIMD3<Float>(repeating: globeScale)
             }
 
-            // Apply snow globe rotation
+            // Apply snow globe rotation + scale
             if let sg = snowGlobeEntity {
                 sg.orientation = snowGlobeRotation
+                sg.scale = SIMD3<Float>(repeating: snowGlobeScale)
             }
 
             // Show/hide snow globe
@@ -100,6 +108,28 @@ struct ContentView: View {
                     }
                 }
         )
+        // Pinch gesture — scales whichever entity is pinched
+        .gesture(
+            MagnifyGesture()
+                .targetedToAnyEntity()
+                .onChanged { value in
+                    let magnification = Float(value.magnification)
+                    if isDragOnSnowGlobe(value.entity) {
+                        let newScale = snowGlobePinchStart * magnification
+                        snowGlobeScale = min(max(newScale, 0.4), 1.5)
+                    } else {
+                        let newScale = globePinchStart * magnification
+                        globeScale = min(max(newScale, 0.5), 2.0)
+                    }
+                }
+                .onEnded { value in
+                    if isDragOnSnowGlobe(value.entity) {
+                        snowGlobePinchStart = snowGlobeScale
+                    } else {
+                        globePinchStart = globeScale
+                    }
+                }
+        )
         // Tap gesture for pin selection
         .gesture(
             TapGesture()
@@ -120,9 +150,11 @@ struct ContentView: View {
     // MARK: - Helpers
 
     private func selectCity(named cityName: String) {
-        // Reset snow globe rotation when switching cities
+        // Reset snow globe rotation + scale when switching cities
         snowGlobeRotation = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
         snowGlobeDragStart = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
+        snowGlobeScale = 0.85
+        snowGlobePinchStart = 0.85
         selectedCity = cities.first { $0.name == cityName }
     }
 
@@ -152,7 +184,7 @@ struct ContentView: View {
             if snowGlobeEntity == nil {
                 let newGlobe = VoxelBuilder.buildSnowGlobe(for: city.name)
                 newGlobe.position = SIMD3<Float>(0.20, 0.0, 0.0)
-                newGlobe.scale = SIMD3<Float>(repeating: 0.85)
+                newGlobe.scale = SIMD3<Float>(repeating: snowGlobeScale)
 
                 if let root = globeEntity?.parent {
                     root.addChild(newGlobe)
