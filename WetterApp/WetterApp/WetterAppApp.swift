@@ -18,7 +18,7 @@ struct WetterAppApp: App {
                 .environment(appModel)
         }
         .windowStyle(.volumetric)
-        .defaultSize(width: 0.6, height: 0.5, depth: 0.6, in: .meters)
+        .defaultSize(width: 0.9, height: 0.6, depth: 0.6, in: .meters)
 
         ImmersiveSpace(id: appModel.immersiveSpaceID) {
             ImmersiveView()
