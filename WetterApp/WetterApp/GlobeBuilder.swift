@@ -21,7 +21,7 @@ struct GlobeBuilder {
         if let earthEntity = try? await Entity(named: "Earth", in: realityKitContentBundle) {
             // Scale the model to match our globe radius
             // Adjust this value if the globe appears too big or small
-            earthEntity.scale = SIMD3<Float>(repeating: 0.4)
+            earthEntity.scale = SIMD3<Float>(repeating: 0.8)
             earthEntity.name = "globe-sphere"
 
             // Enable input on globe for drag rotation
