@@ -83,29 +83,14 @@ struct ContentView: View {
                 }
             }
         }
-        // Tap gesture for pin selection
-        .gesture(
-            SpatialTapGesture()
-                .targetedToAnyEntity()
-                .onEnded { value in
-                    let tappedName = value.entity.name
-                    if tappedName.hasPrefix("pin-head-") {
-                        let cityName = String(tappedName.dropFirst("pin-head-".count))
-                        selectCity(named: cityName)
-                    } else if tappedName.hasPrefix("pin-") && !tappedName.hasPrefix("pin-head-") {
-                        let cityName = String(tappedName.dropFirst("pin-".count))
-                        selectCity(named: cityName)
-                    }
-                }
-        )
         // Drag gesture — rotates whichever entity is dragged
-        .simultaneousGesture(
+        .gesture(
             DragGesture()
                 .targetedToAnyEntity()
                 .onChanged { value in
                     let translation = value.translation3D
-                    let hAngle = Float(translation.x) * 0.005
-                    let vAngle = Float(translation.y) * -0.005
+                    let hAngle = Float(translation.x) * 0.01
+                    let vAngle = Float(translation.y) * -0.01
                     let yaw = simd_quatf(angle: hAngle, axis: SIMD3(0, 1, 0))
                     let pitch = simd_quatf(angle: vAngle, axis: SIMD3(1, 0, 0))
 
@@ -123,8 +108,26 @@ struct ContentView: View {
                     }
                 }
         )
+        // Tap gesture for pin selection
+        .gesture(
+            SpatialTapGesture()
+                .targetedToAnyEntity()
+                .onEnded { value in
+                    let tappedName = value.entity.name
+                    if tappedName.hasPrefix("pin-head-") {
+                        let cityName = String(tappedName.dropFirst("pin-head-".count))
+                        selectCity(named: cityName)
+                    } else if tappedName.hasPrefix("pin-") && !tappedName.hasPrefix("pin-head-") {
+                        let cityName = String(tappedName.dropFirst("pin-".count))
+                        selectCity(named: cityName)
+                    } else {
+                        // Tap on globe itself — deselect city
+                        selectedCity = nil
+                    }
+                }
+        )
         // Pinch gesture — scales whichever entity is pinched
-        .simultaneousGesture(
+        .gesture(
             MagnifyGesture()
                 .targetedToAnyEntity()
                 .onChanged { value in
