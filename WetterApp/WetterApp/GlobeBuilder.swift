@@ -60,18 +60,18 @@ struct GlobeBuilder {
             pinRoot.addChild(v)
         }
 
-        // Head: colored voxel on top (slightly larger)
-        let headMesh = MeshResource.generateBox(size: pinVoxelSize * 1.4)
+        // Head: colored voxel on top (larger for visibility)
+        let headMesh = MeshResource.generateBox(size: pinVoxelSize * 2.5)
         let head = ModelEntity(mesh: headMesh, materials: [headMat])
         head.position = SIMD3<Float>(0, 3 * pinVoxelGrid, 0)
         head.name = "pin-head-\(city.name)"
         pinRoot.addChild(head)
 
-        // Enable tap on the pin
-        let pinCollisionSize = pinVoxelSize * 4
-        head.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-        head.components.set(CollisionComponent(shapes: [.generateBox(width: pinCollisionSize, height: pinCollisionSize, depth: pinCollisionSize)]))
-        head.components.set(HoverEffectComponent())
+        // Enable tap on the pin — large collision sphere for easy eye targeting
+        let pinCollisionRadius: Float = 0.025
+        pinRoot.components.set(InputTargetComponent(allowedInputTypes: .indirect))
+        pinRoot.components.set(CollisionComponent(shapes: [.generateSphere(radius: pinCollisionRadius)]))
+        pinRoot.components.set(HoverEffectComponent())
 
         // Position on globe surface and orient outward
         let surfacePos = latLonToPosition(lat: city.latitude, lon: city.longitude, radius: globeRadius)
