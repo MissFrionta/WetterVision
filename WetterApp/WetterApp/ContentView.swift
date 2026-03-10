@@ -37,10 +37,11 @@ struct ContentView: View {
             // City labels (tappable, floating above markers)
             for city in cities {
                 if let attachment = attachments.entity(for: "label-\(city.name)") {
+                    attachment.name = "label-\(city.name)"
                     let labelPos = GlobeBuilder.latLonToPosition(
                         lat: city.latitude,
                         lon: city.longitude + GlobeBuilder.lonOffset,
-                        radius: GlobeBuilder.globeCollisionRadius + 0.02
+                        radius: GlobeBuilder.globeRadius + GlobeBuilder.stickHeight + 0.01
                     )
                     attachment.position = labelPos
                     attachment.components.set(BillboardComponent())
