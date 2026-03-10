@@ -68,7 +68,7 @@ struct GlobeBuilder {
         pinRoot.addChild(head)
 
         // Enable tap on the pin — large collision sphere for easy eye targeting
-        let pinCollisionRadius: Float = 0.025
+        let pinCollisionRadius: Float = 0.04
         pinRoot.components.set(InputTargetComponent(allowedInputTypes: .indirect))
         pinRoot.components.set(CollisionComponent(shapes: [.generateSphere(radius: pinCollisionRadius)]))
         pinRoot.components.set(HoverEffectComponent())

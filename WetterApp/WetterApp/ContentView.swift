@@ -90,7 +90,7 @@ struct ContentView: View {
                 .onChanged { value in
                     let translation = value.translation3D
                     let hAngle = Float(translation.x) * 0.01
-                    let vAngle = Float(translation.y) * -0.01
+                    let vAngle = Float(translation.y) * 0.01
                     let yaw = simd_quatf(angle: hAngle, axis: SIMD3(0, 1, 0))
                     let pitch = simd_quatf(angle: vAngle, axis: SIMD3(1, 0, 0))
 
@@ -196,7 +196,7 @@ struct ContentView: View {
 
                 // Attach weather panel
                 if let panel = attachments.entity(for: "weather-panel") {
-                    panel.position = SIMD3<Float>(0, -0.24, 0)
+                    panel.position = SIMD3<Float>(0, -0.22, 0.18)
                     panel.components.set(BillboardComponent())
                     newGlobe.addChild(panel)
                 }

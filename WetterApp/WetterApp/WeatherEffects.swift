@@ -126,14 +126,14 @@ struct WeatherEffects {
     private static func addRain(to parent: Entity) {
         let rainEntity = Entity()
         rainEntity.name = "rain"
-        rainEntity.position = SIMD3<Float>(0, 0.06, 0)
+        rainEntity.position = SIMD3<Float>(0, 0.04, 0)
 
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
-        emitter.emitterShapeSize = SIMD3<Float>(0.20, 0.01, 0.20)
+        emitter.emitterShapeSize = SIMD3<Float>(0.12, 0.01, 0.12)
         emitter.mainEmitter.birthRate = 200
         emitter.speed = 0.15
-        emitter.mainEmitter.lifeSpan = 0.8
+        emitter.mainEmitter.lifeSpan = 0.6
 
         // Rain drops: small, blue, falling down
         emitter.mainEmitter.size = 0.002
@@ -149,14 +149,14 @@ struct WeatherEffects {
     private static func addSnow(to parent: Entity) {
         let snowEntity = Entity()
         snowEntity.name = "snow"
-        snowEntity.position = SIMD3<Float>(0, 0.06, 0)
+        snowEntity.position = SIMD3<Float>(0, 0.04, 0)
 
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
-        emitter.emitterShapeSize = SIMD3<Float>(0.20, 0.01, 0.20)
+        emitter.emitterShapeSize = SIMD3<Float>(0.12, 0.01, 0.12)
         emitter.mainEmitter.birthRate = 80
         emitter.speed = 0.03
-        emitter.mainEmitter.lifeSpan = 3.0
+        emitter.mainEmitter.lifeSpan = 2.0
 
         // Snowflakes: small, white, drifting down slowly
         emitter.mainEmitter.size = 0.003
