@@ -6,9 +6,9 @@ import UIKit
 struct GlobeBuilder {
 
     // Visual radius of the Earth model at scale 1.1 — adjust if pins float or sink
-    static let globeRadius: Float = 0.142
+    static let globeRadius: Float = 0.136
     // Longitude offset to align pins with the Earth texture (shift west)
-    static let lonOffset: Float = -65.0
+    static let lonOffset: Float = -80.0
     // Pin dimensions
     static let markerRadius: Float = 0.003
     static let stickHeight: Float = 0.015
