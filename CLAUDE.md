@@ -4,60 +4,66 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Run
 
-This is a **visionOS 2.0+** app (Apple Vision Pro). It requires **Xcode 16+** on macOS and uses **XcodeGen** to generate the `.xcodeproj`.
+This is a **visionOS 2.0+** app (Apple Vision Pro). It requires **Xcode 16+** on macOS.
 
 ```bash
-# Generate Xcode project (requires: brew install xcodegen)
-xcodegen generate
-
 # Open in Xcode
-open WetterVision.xcodeproj
+open WetterApp/WetterApp.xcodeproj
 
-# Build & run: select "Apple Vision Pro" simulator in Xcode, then ⌘+R
+# Build & run: select "Apple Vision Pro" device or simulator in Xcode, then ⌘+R
 ```
 
-There are no automated tests. Testing is manual in the visionOS Simulator.
-
-If Swift 6.0 strict concurrency causes errors, switch to Swift 5.9 in `project.yml` (`SWIFT_VERSION: "5.9"`).
+There are no automated tests. Testing is manual on device (Apple Vision Pro) or in the visionOS Simulator.
 
 ## Architecture
 
-**MVVM** with SwiftUI + RealityKit. No external dependencies — only Apple frameworks (SwiftUI, RealityKit, Spatial, Foundation).
+SwiftUI + RealityKit. No external dependencies — only Apple frameworks (SwiftUI, RealityKit, RealityKitContent).
+
+### Key files
+
+| File | Purpose |
+|---|---|
+| `WetterAppApp.swift` | App entry point, `.windowStyle(.volumetric)`, `.defaultSize(0.9, 0.6, 0.6m)` |
+| `ContentView.swift` | Main view: RealityView (make/update/attachments), all gestures, snow globe management, WeatherPanelView |
+| `GlobeBuilder.swift` | Builds Earth globe (USDZ model) with stecknadel-style city pins |
+| `VoxelBuilder.swift` | Builds city-specific voxel snow globe scenes (Berlin, New York, Tokyo, Paris) |
+| `WeatherEffects.swift` | Weather visualizations: sun, clouds, rain/snow particles, lightning |
+| `CityData.swift` | Data model: City struct, WeatherInfo, dummy weather data for 4 cities |
+| `AppModel.swift` | App-wide state (Xcode template) |
 
 ### Data flow
 
-`WeatherViewModel` is the single source of truth, injected via `@EnvironmentObject` from `WetterVisionApp` through the entire view hierarchy.
-
-- **City selection:** `CityPickerView` → `WeatherViewModel.selectCity(at:)` → `DioramaRealityView.rebuildScene()` tears down old entities and calls `DioramaBuilder.build(for:)` to construct new ones.
-- **Gestures:** `DioramaGestures` (ViewModifier) captures `RotateGesture3D` / `MagnifyGesture` → updates ViewModel's `dioramaRotation` / `dioramaScale` → `RealityView` update closure applies transforms to root entity. Base values are committed on gesture end.
+- `ContentView` owns all state as `@State` variables (no ViewModel)
+- City selection: Tap on label/marker → `selectCity(named:)` → `selectedCity` changes → `update` closure runs → `updateSnowGlobe()` builds/swaps snow globe
+- Gestures: `.simultaneousGesture()` on RealityView → updates `@State` rotation/scale → `update` closure applies transforms
+- Entity identification: `isDragOnSnowGlobe()` traverses entity hierarchy by name
 
 ### Scene construction
 
-All 3D content is **programmatic** — no USDZ assets. `DioramaBuilder.build(for:)` is the orchestrator that always adds island + thermometer + wind, then switches on `WeatherCondition` to add sun, clouds, rain/snow particles, or lightning. Each entity class (`IslandEntity`, `CloudEntity`, `SunEntity`, etc.) has a static `create()` factory method returning an `Entity`.
+- **Globe:** Earth.usdz loaded via `Entity(named: "Earth", in: realityKitContentBundle)` at scale 1.1
+- **Pins:** Stecknadel-style — white cylinder stick + colored sphere head, positioned via lat/lon → spherical coordinates
+- **Labels:** SwiftUI Attachments with BillboardComponent, named `"label-CityName"` for tap detection
+- **Snow globes:** `VoxelBuilder.buildSnowGlobe(for:)` — procedural voxel scenes with glass sphere, city landmarks, and weather effects
+- **Weather:** `WeatherEffects.apply(condition:to:)` adds sun/clouds/rain/snow/lightning
 
-The root entity has `InputTargetComponent` + `CollisionComponent` for gesture targeting. The volumetric window is 0.8×0.6×0.8 meters.
+### Important constants (GlobeBuilder)
 
-### UI composition
-
-`ContentView` layers `DioramaRealityView` (3D scene) with a `.ornament(bottom)` containing `CityPickerView` + `WeatherInfoPanel` in a glass-effect panel. `TemperatureGaugeView` is attached as a RealityKit `Attachment` positioned in 3D space next to the thermometer.
+- `globeCollisionRadius = 0.155` — collision shape matching visual Earth
+- `globeRadius = 0.108` — pin placement radius (closer to surface)
+- `lonOffset = -80.0` — longitude correction for Earth texture alignment
 
 ## Key conventions
 
-- **Colors:** All defined centrally in `ColorPalette.swift` as static `UIColor` properties. Use these instead of inline colors.
-- **Entity pattern:** Each entity type is a class with `static func create(...) -> Entity`. Meshes use `MeshResource.generateSphere/Box/Cylinder` + `SimpleMaterial` or `UnlitMaterial`.
-- **Particles:** Rain and snow use `ParticleEmitterComponent` directly on entities (no `.particleEmitter` preset files).
-- **Scale clamping:** Pinch gesture is clamped to 0.5×–2.0× in the ViewModel.
-- **Language:** UI text is in German (city names, weather condition labels). Code (variable names, comments) is in English.
-
-## Status (2026-03-04)
-
-- VoxelBuilder.swift wurde hinzugefügt, DioramaBuilder temporär umgeleitet — funktioniert aber wegen Xcode-Projektstruktur-Problemen nicht zuverlässig
-- **Neuer Plan:** Separates, minimales visionOS-Projekt ("VoxelWorld") für Voxel/Pixel-Art Prototyp erstellen
-- Strategie: Klein anfangen, schrittweise aufbauen, Fokus auf visuelles Ergebnis
-- Zeitdruck — schnelle Iteration, Prototyp muss gut aussehen
+- **Colors:** Defined in `VoxelBuilder.Palette` as static `UIColor` properties
+- **Collision:** Explicit `CollisionComponent` on all interactive entities (no `generateCollisionShapes`)
+- **Hover:** `HoverEffectComponent` on entities that should highlight on gaze
+- **Input:** `InputTargetComponent(allowedInputTypes: .indirect)` for eye+hand interaction
+- **Gestures:** All registered as `.simultaneousGesture()` on RealityView
+- **Particles:** Rain and snow use `ParticleEmitterComponent` directly; `mainEmitter.birthRate` for rate, `speed` (top-level) for velocity
+- **Language:** UI text is in German. Code (variable names, comments) is in English.
 
 ## Workflow
 
-- Code wird auf Windows per Claude Code geschrieben und per Git gepusht
-- Auf Mac: git pull, in Xcode öffnen, builden, im visionOS-Simulator testen
-- **Kein XcodeGen** — User arbeitet direkt in Xcode, nicht über Terminal
+- Code is written on Windows via Claude Code and pushed via Git
+- On Mac: git pull, open in Xcode, build, test on device or simulator
+- **No XcodeGen** — user works directly in Xcode
