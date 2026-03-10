@@ -106,8 +106,9 @@ struct VoxelBuilder {
         glassMat.roughness = .init(floatLiteral: 0.0)
         let globe = ModelEntity(mesh: globeMesh, materials: [glassMat])
         globe.name = "globe-glass"
-        globe.components.set(InputTargetComponent())
+        globe.components.set(InputTargetComponent(allowedInputTypes: .indirect))
         globe.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.17)]))
+        globe.components.set(HoverEffectComponent())
         root.addChild(globe)
 
         // Wooden base

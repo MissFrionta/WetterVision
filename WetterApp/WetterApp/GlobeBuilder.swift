@@ -26,8 +26,9 @@ struct GlobeBuilder {
         globeEntity.name = "globe-sphere"
 
         // Enable input on globe for drag rotation
-        globeEntity.components.set(InputTargetComponent())
+        globeEntity.components.set(InputTargetComponent(allowedInputTypes: .indirect))
         globeEntity.components.set(CollisionComponent(shapes: [.generateSphere(radius: globeRadius)]))
+        globeEntity.components.set(HoverEffectComponent())
 
         root.addChild(globeEntity)
 
@@ -68,8 +69,9 @@ struct GlobeBuilder {
 
         // Enable tap on the pin
         let pinCollisionSize = pinVoxelSize * 4
-        head.components.set(InputTargetComponent())
+        head.components.set(InputTargetComponent(allowedInputTypes: .indirect))
         head.components.set(CollisionComponent(shapes: [.generateBox(width: pinCollisionSize, height: pinCollisionSize, depth: pinCollisionSize)]))
+        head.components.set(HoverEffectComponent())
 
         // Position on globe surface and orient outward
         let surfacePos = latLonToPosition(lat: city.latitude, lon: city.longitude, radius: globeRadius)

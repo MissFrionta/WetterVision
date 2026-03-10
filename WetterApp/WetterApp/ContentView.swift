@@ -83,8 +83,23 @@ struct ContentView: View {
                 }
             }
         }
-        // Drag gesture — rotates whichever entity is dragged
+        // Tap gesture for pin selection
         .gesture(
+            SpatialTapGesture()
+                .targetedToAnyEntity()
+                .onEnded { value in
+                    let tappedName = value.entity.name
+                    if tappedName.hasPrefix("pin-head-") {
+                        let cityName = String(tappedName.dropFirst("pin-head-".count))
+                        selectCity(named: cityName)
+                    } else if tappedName.hasPrefix("pin-") && !tappedName.hasPrefix("pin-head-") {
+                        let cityName = String(tappedName.dropFirst("pin-".count))
+                        selectCity(named: cityName)
+                    }
+                }
+        )
+        // Drag gesture — rotates whichever entity is dragged
+        .simultaneousGesture(
             DragGesture()
                 .targetedToAnyEntity()
                 .onChanged { value in
@@ -109,7 +124,7 @@ struct ContentView: View {
                 }
         )
         // Pinch gesture — scales whichever entity is pinched
-        .gesture(
+        .simultaneousGesture(
             MagnifyGesture()
                 .targetedToAnyEntity()
                 .onChanged { value in
@@ -127,21 +142,6 @@ struct ContentView: View {
                         snowGlobePinchStart = snowGlobeScale
                     } else {
                         globePinchStart = globeScale
-                    }
-                }
-        )
-        // Tap gesture for pin selection
-        .gesture(
-            TapGesture()
-                .targetedToAnyEntity()
-                .onEnded { value in
-                    let tappedName = value.entity.name
-                    if tappedName.hasPrefix("pin-head-") {
-                        let cityName = String(tappedName.dropFirst("pin-head-".count))
-                        selectCity(named: cityName)
-                    } else if tappedName.hasPrefix("pin-") && !tappedName.hasPrefix("pin-head-") {
-                        let cityName = String(tappedName.dropFirst("pin-".count))
-                        selectCity(named: cityName)
                     }
                 }
         )
