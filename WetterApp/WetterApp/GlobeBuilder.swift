@@ -5,7 +5,9 @@ import UIKit
 /// Builds a 3D globe with city pin markers.
 struct GlobeBuilder {
 
-    // Visual radius of the Earth model at scale 1.1 — adjust if pins float or sink
+    // Collision radius matching the visual Earth model at scale 1.1
+    static let globeCollisionRadius: Float = 0.155
+    // Pin placement radius — adjust if pins float or sink
     static let globeRadius: Float = 0.108
     // Longitude offset to align pins with the Earth texture (shift west)
     static let lonOffset: Float = -80.0
@@ -27,7 +29,7 @@ struct GlobeBuilder {
             earthEntity.name = "globe-sphere"
 
             earthEntity.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-            earthEntity.components.set(CollisionComponent(shapes: [.generateSphere(radius: globeRadius)]))
+            earthEntity.components.set(CollisionComponent(shapes: [.generateSphere(radius: globeCollisionRadius)]))
             earthEntity.components.set(HoverEffectComponent())
 
             root.addChild(earthEntity)
@@ -41,7 +43,7 @@ struct GlobeBuilder {
             let globeEntity = ModelEntity(mesh: globeMesh, materials: [globeMat])
             globeEntity.name = "globe-sphere"
             globeEntity.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-            globeEntity.components.set(CollisionComponent(shapes: [.generateSphere(radius: globeRadius)]))
+            globeEntity.components.set(CollisionComponent(shapes: [.generateSphere(radius: globeCollisionRadius)]))
             globeEntity.components.set(HoverEffectComponent())
             root.addChild(globeEntity)
         }
