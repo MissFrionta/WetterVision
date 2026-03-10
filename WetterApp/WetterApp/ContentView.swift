@@ -41,7 +41,7 @@ struct ContentView: View {
                     let labelPos = GlobeBuilder.latLonToPosition(
                         lat: city.latitude,
                         lon: city.longitude + GlobeBuilder.lonOffset,
-                        radius: GlobeBuilder.globeRadius + GlobeBuilder.stickHeight + 0.01
+                        radius: GlobeBuilder.globeRadius + GlobeBuilder.stickHeight + 0.018
                     )
                     attachment.position = labelPos
                     attachment.components.set(BillboardComponent())
@@ -139,10 +139,8 @@ struct ContentView: View {
                         }
                         if let city = cityMatch {
                             selectCity(named: city.name)
-                        } else {
-                            // Tap on globe itself — deselect city
-                            selectedCity = nil
                         }
+                        // Tap on globe itself does nothing — city stays selected
                     }
                 }
         )
