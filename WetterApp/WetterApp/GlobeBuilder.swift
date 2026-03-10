@@ -6,7 +6,7 @@ import UIKit
 struct GlobeBuilder {
 
     // Visual radius of the Earth model at scale 1.1 — adjust if pins float or sink
-    static let globeRadius: Float = 0.155
+    static let globeRadius: Float = 0.148
     // Longitude offset to align pins with the Earth texture (shift west)
     static let lonOffset: Float = -50.0
     // Pin dimensions
@@ -75,7 +75,7 @@ struct GlobeBuilder {
             )
             pinRoot.position = surfacePos
             pinRoot.look(at: .zero, from: surfacePos, relativeTo: nil)
-            let flipRotation = simd_quatf(angle: -.pi / 2, axis: SIMD3<Float>(1, 0, 0))
+            let flipRotation = simd_quatf(angle: .pi / 2, axis: SIMD3<Float>(1, 0, 0))
             pinRoot.orientation = pinRoot.orientation * flipRotation
 
             root.addChild(pinRoot)
