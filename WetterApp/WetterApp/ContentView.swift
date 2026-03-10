@@ -34,16 +34,19 @@ struct ContentView: View {
             globeEntity = globe
             root.addChild(globe)
 
-            // City name labels
+            // City labels (tappable, floating above markers)
             for city in cities {
                 if let attachment = attachments.entity(for: "label-\(city.name)") {
                     let labelPos = GlobeBuilder.latLonToPosition(
                         lat: city.latitude,
-                        lon: city.longitude,
-                        radius: GlobeBuilder.globeRadius + 0.045
+                        lon: city.longitude + GlobeBuilder.lonOffset,
+                        radius: GlobeBuilder.globeRadius + 0.035
                     )
                     attachment.position = labelPos
                     attachment.components.set(BillboardComponent())
+                    attachment.components.set(InputTargetComponent(allowedInputTypes: .indirect))
+                    attachment.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.025)]))
+                    attachment.components.set(HoverEffectComponent())
                     globe.addChild(attachment)
                 }
             }
@@ -68,12 +71,17 @@ struct ContentView: View {
         } attachments: {
             ForEach(cities) { city in
                 Attachment(id: "label-\(city.name)") {
-                    Text(city.name)
-                        .font(.system(size: 12, weight: .semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(6)
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color(city.pinColor))
+                            .frame(width: 8, height: 8)
+                        Text(city.name)
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(8)
                 }
             }
 
@@ -108,21 +116,32 @@ struct ContentView: View {
                     }
                 }
         )
-        // Tap gesture for pin selection
+        // Tap gesture for city selection (labels or markers)
         .gesture(
             SpatialTapGesture()
                 .targetedToAnyEntity()
                 .onEnded { value in
                     let tappedName = value.entity.name
-                    if tappedName.hasPrefix("pin-head-") {
-                        let cityName = String(tappedName.dropFirst("pin-head-".count))
-                        selectCity(named: cityName)
-                    } else if tappedName.hasPrefix("pin-") && !tappedName.hasPrefix("pin-head-") {
-                        let cityName = String(tappedName.dropFirst("pin-".count))
+                    // Check for marker tap
+                    if tappedName.hasPrefix("marker-") {
+                        let cityName = String(tappedName.dropFirst("marker-".count))
                         selectCity(named: cityName)
                     } else {
-                        // Tap on globe itself — deselect city
-                        selectedCity = nil
+                        // Check if a label attachment was tapped (walk up hierarchy to find city name)
+                        let cityMatch = cities.first { city in
+                            var current: Entity? = value.entity
+                            while let e = current {
+                                if e.name == "label-\(city.name)" { return true }
+                                current = e.parent
+                            }
+                            return false
+                        }
+                        if let city = cityMatch {
+                            selectCity(named: city.name)
+                        } else {
+                            // Tap on globe itself — deselect city
+                            selectedCity = nil
+                        }
                     }
                 }
         )
