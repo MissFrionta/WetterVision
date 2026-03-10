@@ -27,7 +27,7 @@ struct GlobeBuilder {
 
         // Enable input on globe for drag rotation
         globeEntity.components.set(InputTargetComponent())
-        globeEntity.generateCollisionShapes(sizes: [.init(repeating: globeRadius * 2)])
+        globeEntity.components.set(CollisionComponent(shapes: [.generateSphere(radius: globeRadius)]))
 
         root.addChild(globeEntity)
 
@@ -69,7 +69,7 @@ struct GlobeBuilder {
         // Enable tap on the pin
         let pinCollisionSize = pinVoxelSize * 4
         head.components.set(InputTargetComponent())
-        head.generateCollisionShapes(sizes: [.init(repeating: pinCollisionSize)])
+        head.components.set(CollisionComponent(shapes: [.generateBox(width: pinCollisionSize, height: pinCollisionSize, depth: pinCollisionSize)]))
 
         // Position on globe surface and orient outward
         let surfacePos = latLonToPosition(lat: city.latitude, lon: city.longitude, radius: globeRadius)
