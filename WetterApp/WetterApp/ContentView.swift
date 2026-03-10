@@ -40,7 +40,7 @@ struct ContentView: View {
                     let labelPos = GlobeBuilder.latLonToPosition(
                         lat: city.latitude,
                         lon: city.longitude + GlobeBuilder.lonOffset,
-                        radius: GlobeBuilder.globeRadius + GlobeBuilder.stickHeight + 0.015
+                        radius: GlobeBuilder.globeCollisionRadius + 0.02
                     )
                     attachment.position = labelPos
                     attachment.components.set(BillboardComponent())
