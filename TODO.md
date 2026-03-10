@@ -1,6 +1,6 @@
 # WetterApp — TODO-Liste
 
-Stand: 2026-03-10
+Stand: 2026-03-11
 
 ---
 
@@ -24,42 +24,45 @@ Stand: 2026-03-10
 - [ ] Bedienbarkeit verbessern: Pins sind noch schwer zu treffen (Collision vergroessert auf 4cm, aber ggf. noch zu klein)
 
 ### Anforderung 4: Informative und aesthetische 3D-Darstellung
-- [x] 5 stadtspezifische Voxel-Szenen (Berlin, New York, Tokio, London, Paris)
+- [x] 4 stadtspezifische Voxel-Szenen (Berlin, New York, Tokio, Paris) — London entfernt (zu nah an Berlin/Paris)
 - [x] Wettereffekte: Sonne, Wolken, Regen, Schnee, Gewitter
 - [x] Voxel-Art-Stil (prozedural, keine externen Assets)
 - [x] Farbpalette konsistent in VoxelBuilder.Palette
-- [ ] Partikel (Regen/Schnee) noch teilweise ausserhalb der Schneekugel — Emitter verkleinert, muss nochmal getestet werden
+- [ ] **Regenpartikel nicht sichtbar** — Regen wird in der Schneekugel nicht mehr angezeigt, muss debuggt werden
+- [ ] **Voxelstaedte verschoenern** — Aktuelle Szenen sind funktional, aber koennten aesthetisch verbessert werden
 - [ ] Performance: Lag/Crash nach mehreren Interaktionen — Entity-Anzahl reduziert (~40%), muss nochmal getestet werden
 
 ### Anforderung 5: Dummy-Daten
-- [x] 5 Staedte mit Dummy-Wetterdaten in CityData.swift (Temperatur, Luftfeuchtigkeit, Wind, Zustand, Beschreibung)
-- [ ] Optional: Anbindung an echte Wetter-API (Open-Meteo oder DWD Open Data)
+- [x] 4 Staedte mit Dummy-Wetterdaten in CityData.swift (Temperatur, Luftfeuchtigkeit, Wind, Zustand, Beschreibung)
+- [ ] Optional: Anbindung an echte Wetter-API (Open-Meteo oder DWD Open Data) — nur in neuem Branch
 
 ---
 
 ## Bekannte Bugs / Offene Probleme
 
 ### Hoch (muss fuer Abnahme gefixt sein)
-- [ ] **Pin-Tapping schwierig** — Pins auf dem Globus sind schwer mit Eye-Tracking zu treffen. Collision-Radius ist 4cm, evtl. noch groessere Hitbox oder alternative Selektion (z.B. SwiftUI-Buttons als Attachments neben den Pins)
-- [ ] **Performance/Crash** — App laggt nach mehreren Stadtwechseln und stuerzt ab. Entity-Anzahl wurde reduziert, muss auf dem Geraet verifiziert werden. Falls weiterhin problematisch: Mesh-Merging oder Entity-Instancing evaluieren
-- [ ] **Schneekugel-Stacking pruefen** — Es gab Hinweise, dass alte Schneekugeln nicht sauber entfernt werden. Fix wurde implementiert (explizites Children-Cleanup + Early Return), muss verifiziert werden
+- [ ] **Performance/Crash bei Schneekugel** — App laggt sehr stark sobald eine Schneekugel angezeigt wird und stuerzt gelegentlich ab. Entity-Anzahl wurde bereits reduziert (~40%), reicht aber nicht. Mesh-Merging, Entity-Instancing oder weitere Reduktion evaluieren
+- [ ] **Stadt-Labels nicht hervorgehoben** — Labels werden beim Anschauen (Eye-Tracking) nicht visuell hervorgehoben, obwohl HoverEffectComponent gesetzt ist. Selektieren einer Stadt dadurch sehr schwer — User weiss nicht, ob Label fokussiert ist
+- [ ] **Regenpartikel nicht sichtbar** — Regen-Effekt wird in der Schneekugel nicht mehr angezeigt, muss debuggt werden
 
 ### Mittel (sollte gefixt werden)
-- [ ] **Partikel ausserhalb der Schneekugel** — Emitter-Flaeche von 20x20cm auf 12x12cm reduziert und Position angepasst, muss auf dem Geraet getestet werden
-- [ ] **Rotation noch nicht ganz sauber** — Funktioniert grundsaetzlich, aber User empfindet es als "nicht ganz sauber". Evtl. Sensitivity-Werte anpassen oder Damping hinzufuegen
+- [ ] **Voxelstaedte verschoenern** — Aktuelle Szenen sind funktional, koennten aber aesthetisch verbessert werden (mehr Details, bessere Proportionen)
+- [ ] **Wetter-Panel Positionierung** — UI-Element mit Wetterdaten koennte noch besser positioniert werden (aktuell unter der Schneekugel, evtl. seitlich oder als Ornament)
 
 ### Niedrig (nice to have)
 - [ ] Animierte Uebergaenge beim Schneekugel-Wechsel (Fade-In/Out)
-- [ ] Tap auf Globus deselektiert Stadt (Code ist da, muss getestet werden)
+- [x] Tap auf Globus deselektiert Stadt — funktioniert
 
 ---
 
-## Erweiterungen (aus Dokumentation, optional)
+## Erweiterungen (optional, nur wenn Zeit reicht — jeweils in neuem Branch)
 
-- [ ] Anbindung an echte Wetter-API (Open-Meteo oder DWD Open Data)
-- [ ] Nutzer:innen koennen eigene Staedte hinzufuegen
+- [ ] **Echte Wetter-API** (Open-Meteo oder DWD Open Data) — nur wenn alles andere fertig ist
+- [ ] **Mehr Staedte hinzufuegen** — z.B. Sydney, Kairo, Rio, Moskau
+- [ ] **Schneekugel-Widgets** — Schneekugeln als platzierbare Widgets im Raum (Shared Space / Immersive Space)
+- [ ] Weitere sinnvolle Funktionen brainstormen (z.B. Tageszeit-Wechsel, Jahreszeiten, AR-Modus)
 - [ ] Verfeinerung der Voxel-Aufloesung fuer mehr Detail
-- [ ] Apple-Globus-Modell aus Reality Composer Pro statt Placeholder-Kugel
+- [x] ~~Apple-Globus-Modell aus Reality Composer Pro~~ — Earth.usdz eingebunden
 
 ---
 
@@ -77,12 +80,13 @@ Stand: 2026-03-10
 
 ---
 
-## Erledigte Aufgaben (diese Session, 2026-03-10)
+## Erledigte Aufgaben
 
+### Session 2026-03-10
 - [x] Build-Fehler GlobeBuilder: generateCollisionShapes -> CollisionComponent
 - [x] Build-Fehler VoxelBuilder: generateCollisionShapes -> CollisionComponent
 - [x] Build-Fehler WeatherEffects: birthRate/speed/birthDirection API-Fixes
-- [x] Gesten funktionieren: HoverEffectComponent, SpatialTapGesture, .gesture() statt .simultaneousGesture()
+- [x] Gesten funktionieren: HoverEffectComponent, SpatialTapGesture
 - [x] Vertikale Rotation invertiert (Hand hoch = Globus hoch)
 - [x] Pin-Collision vergroessert (2.5cm -> 4cm Radius)
 - [x] Pin-Head visuell vergroessert (1.4x -> 2.5x)
@@ -90,3 +94,14 @@ Stand: 2026-03-10
 - [x] Wetter-Panel nach vorne versetzt (z=0.18)
 - [x] Schneekugel-Removal robuster (Children-Cleanup + Early Return)
 - [x] Entity-Anzahl reduziert (~40%): Ground-Radius 11->8, 1 statt 2 Dreckschichten, kleinere Baumkronen
+
+### Session 2026-03-11
+- [x] Earth.usdz Globus-Modell eingebunden (statt blauer Placeholder-Kugel)
+- [x] Voxel-Pins ersetzt durch Stecknadel-Stil (Cylinder + Sphere)
+- [x] Tappbare SwiftUI-Labels als Attachments ueber den Pins
+- [x] Pin-Positionierung iteriert (globeRadius, lonOffset)
+- [x] London entfernt (zu nah an Berlin/Paris auf kleinem Globus)
+- [x] Collision-Radius von Pin-Radius getrennt (globeCollisionRadius vs globeRadius)
+- [x] Label-Name gesetzt (attachment.name) — Fix fuer Stadt-Selektion
+- [x] Globe bleibt links wenn Schneekugel sichtbar (snowGlobeEntity-Check)
+- [x] simultaneousGesture fuer alle Gesten (Drag ohne vorheriges Tappen)
