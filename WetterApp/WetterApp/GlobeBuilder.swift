@@ -1,4 +1,5 @@
 import RealityKit
+import RealityKitContent
 import UIKit
 
 /// Builds a 3D globe with voxel-style city pins.
@@ -12,25 +13,37 @@ struct GlobeBuilder {
 
     /// Builds the full globe entity with all city pins attached.
     /// Each pin entity is named "pin-{cityName}" for tap detection.
-    static func buildGlobe(cities: [City]) -> Entity {
+    static func buildGlobe(cities: [City]) async -> Entity {
         let root = Entity()
         root.name = "globe-root"
 
-        // -- Globe sphere (placeholder — swap with Apple model later) --
-        let globeMesh = MeshResource.generateSphere(radius: globeRadius)
-        var globeMat = SimpleMaterial()
-        globeMat.color = .init(tint: UIColor(red: 0.15, green: 0.40, blue: 0.75, alpha: 1.0))
-        globeMat.metallic = .init(floatLiteral: 0.3)
-        globeMat.roughness = .init(floatLiteral: 0.7)
-        let globeEntity = ModelEntity(mesh: globeMesh, materials: [globeMat])
-        globeEntity.name = "globe-sphere"
+        // -- Earth globe from USDZ model --
+        if let earthEntity = try? await Entity(named: "Earth", in: realityKitContentBundle) {
+            // Scale the model to match our globe radius
+            // Adjust this value if the globe appears too big or small
+            earthEntity.scale = SIMD3<Float>(repeating: 0.0004)
+            earthEntity.name = "globe-sphere"
 
-        // Enable input on globe for drag rotation
-        globeEntity.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-        globeEntity.components.set(CollisionComponent(shapes: [.generateSphere(radius: globeRadius)]))
-        globeEntity.components.set(HoverEffectComponent())
+            // Enable input on globe for drag rotation
+            earthEntity.components.set(InputTargetComponent(allowedInputTypes: .indirect))
+            earthEntity.components.set(CollisionComponent(shapes: [.generateSphere(radius: globeRadius)]))
+            earthEntity.components.set(HoverEffectComponent())
 
-        root.addChild(globeEntity)
+            root.addChild(earthEntity)
+        } else {
+            // Fallback: blue placeholder sphere
+            let globeMesh = MeshResource.generateSphere(radius: globeRadius)
+            var globeMat = SimpleMaterial()
+            globeMat.color = .init(tint: UIColor(red: 0.15, green: 0.40, blue: 0.75, alpha: 1.0))
+            globeMat.metallic = .init(floatLiteral: 0.3)
+            globeMat.roughness = .init(floatLiteral: 0.7)
+            let globeEntity = ModelEntity(mesh: globeMesh, materials: [globeMat])
+            globeEntity.name = "globe-sphere"
+            globeEntity.components.set(InputTargetComponent(allowedInputTypes: .indirect))
+            globeEntity.components.set(CollisionComponent(shapes: [.generateSphere(radius: globeRadius)]))
+            globeEntity.components.set(HoverEffectComponent())
+            root.addChild(globeEntity)
+        }
 
         // -- City pins --
         for city in cities {

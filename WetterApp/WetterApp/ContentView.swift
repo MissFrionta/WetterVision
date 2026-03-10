@@ -29,7 +29,7 @@ struct ContentView: View {
             root.name = "scene-root"
 
             // -- Globe --
-            let globe = GlobeBuilder.buildGlobe(cities: cities)
+            let globe = await GlobeBuilder.buildGlobe(cities: cities)
             globe.name = "globe-container"
             globeEntity = globe
             root.addChild(globe)
