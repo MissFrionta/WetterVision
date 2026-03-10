@@ -2,19 +2,21 @@ import RealityKit
 import RealityKitContent
 import UIKit
 
-/// Builds a 3D globe with city markers.
+/// Builds a 3D globe with city pin markers.
 struct GlobeBuilder {
 
     // Visual radius of the Earth model at scale 1.1 — adjust if pins float or sink
-    static let globeRadius: Float = 0.165
-    // Longitude offset to align pins with the Earth texture (adjust as needed)
-    static let lonOffset: Float = 0.0
-    // Small sphere marker on the surface
-    static let markerRadius: Float = 0.004
+    static let globeRadius: Float = 0.155
+    // Longitude offset to align pins with the Earth texture (shift west)
+    static let lonOffset: Float = -50.0
+    // Pin dimensions
+    static let markerRadius: Float = 0.003
+    static let stickHeight: Float = 0.015
+    static let stickRadius: Float = 0.001
 
     // MARK: - Public API
 
-    /// Builds the full globe entity with small sphere markers for each city.
+    /// Builds the full globe entity with pin markers for each city.
     static func buildGlobe(cities: [City]) async -> Entity {
         let root = Entity()
         root.name = "globe-root"
@@ -44,20 +46,39 @@ struct GlobeBuilder {
             root.addChild(globeEntity)
         }
 
-        // -- City markers (small colored spheres on surface) --
-        let markerMesh = MeshResource.generateSphere(radius: markerRadius)
-        for city in cities {
-            let mat = SimpleMaterial(color: city.pinColor, isMetallic: false)
-            let marker = ModelEntity(mesh: markerMesh, materials: [mat])
-            marker.name = "marker-\(city.name)"
+        // -- City pins (stick + colored sphere head) --
+        let stickMesh = MeshResource.generateCylinder(height: stickHeight, radius: stickRadius)
+        let stickMat = SimpleMaterial(color: UIColor(white: 0.95, alpha: 1), isMetallic: false)
+        let headMesh = MeshResource.generateSphere(radius: markerRadius)
 
+        for city in cities {
+            let pinRoot = Entity()
+            pinRoot.name = "pin-\(city.name)"
+
+            // Stick (thin white cylinder)
+            let stick = ModelEntity(mesh: stickMesh, materials: [stickMat])
+            stick.position = SIMD3<Float>(0, stickHeight / 2, 0)
+            pinRoot.addChild(stick)
+
+            // Head (colored sphere on top)
+            let headMat = SimpleMaterial(color: city.pinColor, isMetallic: false)
+            let head = ModelEntity(mesh: headMesh, materials: [headMat])
+            head.position = SIMD3<Float>(0, stickHeight + markerRadius, 0)
+            head.name = "marker-\(city.name)"
+            pinRoot.addChild(head)
+
+            // Position on globe surface and orient outward
             let surfacePos = latLonToPosition(
                 lat: city.latitude,
                 lon: city.longitude + lonOffset,
-                radius: globeRadius + markerRadius
+                radius: globeRadius
             )
-            marker.position = surfacePos
-            root.addChild(marker)
+            pinRoot.position = surfacePos
+            pinRoot.look(at: .zero, from: surfacePos, relativeTo: nil)
+            let flipRotation = simd_quatf(angle: -.pi / 2, axis: SIMD3<Float>(1, 0, 0))
+            pinRoot.orientation = pinRoot.orientation * flipRotation
+
+            root.addChild(pinRoot)
         }
 
         return root
