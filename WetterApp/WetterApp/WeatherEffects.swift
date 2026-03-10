@@ -131,14 +131,13 @@ struct WeatherEffects {
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.20, 0.01, 0.20)
-        emitter.birthRate = 200
-        emitter.speed = 0.15
+        emitter.mainEmitter.birthRate = 200
+        emitter.mainEmitter.speed = 0.15
         emitter.mainEmitter.lifeSpan = 0.8
 
         // Rain drops: small, blue, falling down
         emitter.mainEmitter.size = 0.002
         emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.4, green: 0.65, blue: 0.9, alpha: 0.8)))
-        emitter.birthDirection = .constant(.local(normalize(SIMD3<Float>(0, -1, 0))))
         emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.3, 0)
 
         rainEntity.components.set(emitter)
@@ -155,14 +154,13 @@ struct WeatherEffects {
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.20, 0.01, 0.20)
-        emitter.birthRate = 80
-        emitter.speed = 0.03
+        emitter.mainEmitter.birthRate = 80
+        emitter.mainEmitter.speed = 0.03
         emitter.mainEmitter.lifeSpan = 3.0
 
         // Snowflakes: small, white, drifting down slowly
         emitter.mainEmitter.size = 0.003
         emitter.mainEmitter.color = .constant(.single(UIColor(white: 1.0, alpha: 0.9)))
-        emitter.birthDirection = .constant(.local(normalize(SIMD3<Float>(0, -1, 0))))
         emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.05, 0)
 
         snowEntity.components.set(emitter)
