@@ -92,7 +92,7 @@ struct ContentView: View {
             }
         }
         // Drag gesture — rotates whichever entity is dragged
-        .gesture(
+        .simultaneousGesture(
             DragGesture()
                 .targetedToAnyEntity()
                 .onChanged { value in
@@ -117,7 +117,7 @@ struct ContentView: View {
                 }
         )
         // Tap gesture for city selection (labels or markers)
-        .gesture(
+        .simultaneousGesture(
             SpatialTapGesture()
                 .targetedToAnyEntity()
                 .onEnded { value in
@@ -146,7 +146,7 @@ struct ContentView: View {
                 }
         )
         // Pinch gesture — scales whichever entity is pinched
-        .gesture(
+        .simultaneousGesture(
             MagnifyGesture()
                 .targetedToAnyEntity()
                 .onChanged { value in
