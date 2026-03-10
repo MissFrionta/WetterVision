@@ -57,7 +57,8 @@ struct ContentView: View {
             // Apply globe rotation + position + scale
             if let globe = globeEntity {
                 globe.orientation = globeRotation
-                globe.position.x = selectedCity != nil ? -0.20 : 0.0
+                let hasSnowGlobe = selectedCity != nil || snowGlobeEntity != nil
+                globe.position.x = hasSnowGlobe ? -0.20 : 0.0
                 globe.scale = SIMD3<Float>(repeating: globeScale)
             }
 
@@ -139,8 +140,10 @@ struct ContentView: View {
                         }
                         if let city = cityMatch {
                             selectCity(named: city.name)
+                        } else {
+                            // Tap on globe itself — deselect city
+                            selectedCity = nil
                         }
-                        // Tap on globe itself does nothing — city stays selected
                     }
                 }
         )
