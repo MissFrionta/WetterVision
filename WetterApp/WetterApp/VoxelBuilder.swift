@@ -123,7 +123,7 @@ struct VoxelBuilder {
     // MARK: - Berlin: Fernsehturm + Plattenbauten
 
     private static func buildBerlinScene(in parent: Entity, mesh: MeshResource) {
-        buildGrassGround(in: parent, mesh: mesh, radius: 11)
+        buildGrassGround(in: parent, mesh: mesh, radius: 8)
 
         let towerMat = SimpleMaterial(color: Palette.tvTowerSilver, isMetallic: false)
         let sphereMat = SimpleMaterial(color: Palette.tvTowerSphere, isMetallic: false)
@@ -207,7 +207,7 @@ struct VoxelBuilder {
     // MARK: - New York: Skyscrapers
 
     private static func buildNewYorkScene(in parent: Entity, mesh: MeshResource) {
-        buildConcreteGround(in: parent, mesh: mesh, radius: 11)
+        buildConcreteGround(in: parent, mesh: mesh, radius: 8)
 
         // Skyline — several buildings of different heights
         buildSkyscraper(in: parent, gx: -6, gz: -2, w: 4, d: 4, h: 16, mesh: mesh)
@@ -263,7 +263,7 @@ struct VoxelBuilder {
     // MARK: - Tokio: Pagode + Kirschbaum + Teich
 
     private static func buildTokioScene(in parent: Entity, mesh: MeshResource) {
-        buildGrassGround(in: parent, mesh: mesh, radius: 11)
+        buildGrassGround(in: parent, mesh: mesh, radius: 8)
 
         // Pagoda (center-left)
         buildPagoda(in: parent, gx: -3, gz: 0, mesh: mesh)
@@ -364,14 +364,13 @@ struct VoxelBuilder {
         }
 
         // Pink crown (spherical)
-        let r = 3
-        let centerY = 8
+        let r = 2
+        let centerY = 7
         for dy in -r...r {
             for dx in -r...r {
                 for dz in -r...r {
                     let dist = sqrt(Float(dx * dx + dy * dy + dz * dz))
                     guard dist <= Float(r) + 0.3 else { continue }
-                    if dy < -1 && abs(dx) <= 1 && abs(dz) <= 1 { continue }
                     let mat = sakuraMats[abs(dx + dz + dy) % 2]
                     parent.addChild(voxel(mesh: mesh, mat: mat, x: gx + dx, y: centerY + dy, z: gz + dz))
                 }
@@ -382,7 +381,7 @@ struct VoxelBuilder {
     // MARK: - London: Big Ben + Parliament
 
     private static func buildLondonScene(in parent: Entity, mesh: MeshResource) {
-        buildGrassGround(in: parent, mesh: mesh, radius: 11)
+        buildGrassGround(in: parent, mesh: mesh, radius: 8)
 
         // Big Ben tower
         let brickMat = SimpleMaterial(color: Palette.londonBrick, isMetallic: false)
@@ -459,7 +458,7 @@ struct VoxelBuilder {
     // MARK: - Paris: Eiffelturm + Häuser
 
     private static func buildParisScene(in parent: Entity, mesh: MeshResource) {
-        buildGrassGround(in: parent, mesh: mesh, radius: 11)
+        buildGrassGround(in: parent, mesh: mesh, radius: 8)
 
         let eMat = SimpleMaterial(color: Palette.eiffelBrown, isMetallic: false)
         let eDkMat = SimpleMaterial(color: Palette.eiffelDark, isMetallic: false)
@@ -555,7 +554,7 @@ struct VoxelBuilder {
     // MARK: - Generic Scene (fallback for unknown cities)
 
     private static func buildGenericScene(in parent: Entity, mesh: MeshResource) {
-        buildGrassGround(in: parent, mesh: mesh, radius: 11)
+        buildGrassGround(in: parent, mesh: mesh, radius: 8)
         buildRoundTree(in: parent, gx: -4, gz: -3, height: 5, mesh: mesh)
         buildRoundTree(in: parent, gx: 5, gz: 3, height: 4, mesh: mesh)
         buildRoundTree(in: parent, gx: 0, gz: 6, height: 3, mesh: mesh)
@@ -567,7 +566,6 @@ struct VoxelBuilder {
         let lightMat = SimpleMaterial(color: Palette.grassLight, isMetallic: false)
         let darkMat = SimpleMaterial(color: Palette.grassDark, isMetallic: false)
         let dirtMat = SimpleMaterial(color: Palette.dirt, isMetallic: false)
-        let dirtDkMat = SimpleMaterial(color: Palette.dirtDark, isMetallic: false)
 
         for x in -radius...radius {
             for z in -radius...radius {
@@ -575,9 +573,8 @@ struct VoxelBuilder {
                 guard dist <= Float(radius) + 0.5 else { continue }
                 let grassMat = (x + z) % 2 == 0 ? lightMat : darkMat
                 parent.addChild(voxel(mesh: mesh, mat: grassMat, x: x, y: 0, z: z))
-                let dm = (x + z) % 3 == 0 ? dirtDkMat : dirtMat
-                parent.addChild(voxel(mesh: mesh, mat: dm, x: x, y: -1, z: z))
-                parent.addChild(voxel(mesh: mesh, mat: dirtDkMat, x: x, y: -2, z: z))
+                // Only one dirt layer instead of two
+                parent.addChild(voxel(mesh: mesh, mat: dirtMat, x: x, y: -1, z: z))
             }
         }
     }
@@ -593,7 +590,6 @@ struct VoxelBuilder {
                 let mat = (x + z) % 2 == 0 ? concMat : concDkMat
                 parent.addChild(voxel(mesh: mesh, mat: mat, x: x, y: 0, z: z))
                 parent.addChild(voxel(mesh: mesh, mat: concDkMat, x: x, y: -1, z: z))
-                parent.addChild(voxel(mesh: mesh, mat: concDkMat, x: x, y: -2, z: z))
             }
         }
     }
@@ -612,14 +608,13 @@ struct VoxelBuilder {
             parent.addChild(voxel(mesh: mesh, mat: trunkMat, x: gx, y: y, z: gz))
         }
 
-        let r = 3
+        let r = 2
         let centerY = height + r
         for dy in -r...r {
             for dx in -r...r {
                 for dz in -r...r {
                     let dist = sqrt(Float(dx * dx + dy * dy + dz * dz))
                     guard dist <= Float(r) + 0.3 else { continue }
-                    if dy < -1 && abs(dx) <= 1 && abs(dz) <= 1 { continue }
                     let mat = leafMats[abs(dx + dz + dy) % 2]
                     parent.addChild(voxel(mesh: mesh, mat: mat, x: gx + dx, y: centerY + dy, z: gz + dz))
                 }

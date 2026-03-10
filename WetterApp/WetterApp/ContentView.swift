@@ -175,35 +175,44 @@ struct ContentView: View {
 
     // MARK: - Snow Globe Management
 
+    private func removeSnowGlobe() {
+        if let existing = snowGlobeEntity {
+            // Recursively remove all children first to free memory
+            existing.children.forEach { $0.removeFromParent() }
+            existing.removeFromParent()
+            snowGlobeEntity = nil
+        }
+    }
+
     private func updateSnowGlobe(content: RealityViewContent, attachments: RealityViewAttachments) {
         if let city = selectedCity {
-            // Remove old snow globe if city changed
-            if let existing = snowGlobeEntity, existing.name != "snowglobe-\(city.name)" {
-                existing.removeFromParent()
-                snowGlobeEntity = nil
+            // Only rebuild if city actually changed
+            let targetName = "snowglobe-\(city.name)"
+            if let existing = snowGlobeEntity {
+                if existing.name == targetName {
+                    return // Same city, nothing to do
+                }
+                removeSnowGlobe()
             }
 
             // Create new snow globe
-            if snowGlobeEntity == nil {
-                let newGlobe = VoxelBuilder.buildSnowGlobe(for: city.name)
-                newGlobe.position = SIMD3<Float>(0.20, 0.0, 0.0)
-                newGlobe.scale = SIMD3<Float>(repeating: snowGlobeScale)
+            let newGlobe = VoxelBuilder.buildSnowGlobe(for: city.name)
+            newGlobe.position = SIMD3<Float>(0.20, 0.0, 0.0)
+            newGlobe.scale = SIMD3<Float>(repeating: snowGlobeScale)
 
-                if let root = globeEntity?.parent {
-                    root.addChild(newGlobe)
-                }
-                snowGlobeEntity = newGlobe
+            if let root = globeEntity?.parent {
+                root.addChild(newGlobe)
+            }
+            snowGlobeEntity = newGlobe
 
-                // Attach weather panel
-                if let panel = attachments.entity(for: "weather-panel") {
-                    panel.position = SIMD3<Float>(0, -0.22, 0.18)
-                    panel.components.set(BillboardComponent())
-                    newGlobe.addChild(panel)
-                }
+            // Attach weather panel
+            if let panel = attachments.entity(for: "weather-panel") {
+                panel.position = SIMD3<Float>(0, -0.22, 0.18)
+                panel.components.set(BillboardComponent())
+                newGlobe.addChild(panel)
             }
         } else {
-            snowGlobeEntity?.removeFromParent()
-            snowGlobeEntity = nil
+            removeSnowGlobe()
         }
     }
 }
