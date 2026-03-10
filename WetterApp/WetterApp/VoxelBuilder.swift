@@ -107,7 +107,7 @@ struct VoxelBuilder {
         let globe = ModelEntity(mesh: globeMesh, materials: [glassMat])
         globe.name = "globe-glass"
         globe.components.set(InputTargetComponent())
-        globe.generateCollisionShapes(sizes: [.init(repeating: 0.34)])
+        globe.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.17)]))
         root.addChild(globe)
 
         // Wooden base
