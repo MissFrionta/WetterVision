@@ -32,7 +32,6 @@ struct CityData {
         City(name: "Berlin",   latitude: 52.52,  longitude: 13.41,   pinColor: UIColor(red: 0.90, green: 0.25, blue: 0.20, alpha: 1)),
         City(name: "New York", latitude: 40.71,  longitude: -74.01,  pinColor: UIColor(red: 0.20, green: 0.60, blue: 0.95, alpha: 1)),
         City(name: "Tokio",    latitude: 35.68,  longitude: 139.69,  pinColor: UIColor(red: 0.95, green: 0.80, blue: 0.20, alpha: 1)),
-        City(name: "London",   latitude: 51.51,  longitude: -0.13,   pinColor: UIColor(red: 0.55, green: 0.85, blue: 0.35, alpha: 1)),
         City(name: "Paris",    latitude: 48.86,  longitude: 2.35,    pinColor: UIColor(red: 0.75, green: 0.35, blue: 0.85, alpha: 1)),
     ]
 
