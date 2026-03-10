@@ -132,7 +132,7 @@ struct WeatherEffects {
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.20, 0.01, 0.20)
         emitter.mainEmitter.birthRate = 200
-        emitter.mainEmitter.speed = 0.15
+        emitter.speed = 0.15
         emitter.mainEmitter.lifeSpan = 0.8
 
         // Rain drops: small, blue, falling down
@@ -155,7 +155,7 @@ struct WeatherEffects {
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.20, 0.01, 0.20)
         emitter.mainEmitter.birthRate = 80
-        emitter.mainEmitter.speed = 0.03
+        emitter.speed = 0.03
         emitter.mainEmitter.lifeSpan = 3.0
 
         // Snowflakes: small, white, drifting down slowly
