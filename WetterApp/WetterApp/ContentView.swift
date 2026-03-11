@@ -92,14 +92,6 @@ struct ContentView: View {
                     WeatherPanelView(city: city)
                 }
 
-                Attachment(id: "close-snowglobe") {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 18))
-                        .foregroundStyle(.white.opacity(0.9))
-                        .padding(4)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                }
             }
         }
         // Drag gesture — rotates whichever entity is dragged
@@ -253,16 +245,16 @@ struct ContentView: View {
                 newGlobe.addChild(panel)
             }
 
-            // Attach close button (top-right of snow globe)
-            if let closeBtn = attachments.entity(for: "close-snowglobe") {
-                closeBtn.name = "close-snowglobe"
-                closeBtn.position = SIMD3<Float>(0.10, 0.14, 0.08)
-                closeBtn.components.set(BillboardComponent())
-                closeBtn.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-                closeBtn.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.018)]))
-                closeBtn.components.set(HoverEffectComponent())
-                newGlobe.addChild(closeBtn)
-            }
+            // Close button (pure RealityKit entity — no SwiftUI attachment)
+            let closeMesh = MeshResource.generateSphere(radius: 0.012)
+            let closeMat = SimpleMaterial(color: UIColor(red: 0.85, green: 0.2, blue: 0.2, alpha: 1), isMetallic: false)
+            let closeBtn = ModelEntity(mesh: closeMesh, materials: [closeMat])
+            closeBtn.name = "close-snowglobe"
+            closeBtn.position = SIMD3<Float>(0.10, 0.14, 0.08)
+            closeBtn.components.set(InputTargetComponent(allowedInputTypes: .indirect))
+            closeBtn.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.018)]))
+            closeBtn.components.set(HoverEffectComponent())
+            newGlobe.addChild(closeBtn)
         } else {
             removeSnowGlobe()
         }
