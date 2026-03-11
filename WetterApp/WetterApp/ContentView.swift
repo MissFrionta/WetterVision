@@ -92,6 +92,17 @@ struct ContentView: View {
                 Attachment(id: "weather-panel") {
                     WeatherPanelView(city: city)
                 }
+                Attachment(id: "close-button") {
+                    Button {
+                        selectedCity = nil
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .bold))
+                    }
+                    .buttonStyle(.borderless)
+                    .frame(width: 32, height: 32)
+                    .background(.ultraThinMaterial, in: Circle())
+                }
             }
         }
         // Drag gesture — rotates whichever entity is dragged
@@ -141,10 +152,8 @@ struct ContentView: View {
                         }
                         if let city = cityMatch {
                             selectCity(named: city.name)
-                        } else {
-                            // Tap on globe itself — deselect city
-                            selectedCity = nil
                         }
+                        // Tap on globe itself does nothing — use close button on snow globe instead
                     }
                 }
         )
@@ -232,6 +241,16 @@ struct ContentView: View {
                 panel.position = SIMD3<Float>(0, -0.22, 0.18)
                 panel.components.set(BillboardComponent())
                 newGlobe.addChild(panel)
+            }
+
+            // Attach close button (top-right of snow globe)
+            if let closeBtn = attachments.entity(for: "close-button") {
+                closeBtn.position = SIMD3<Float>(0.14, 0.14, 0.10)
+                closeBtn.components.set(BillboardComponent())
+                closeBtn.components.set(InputTargetComponent(allowedInputTypes: .indirect))
+                closeBtn.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.025)]))
+                closeBtn.components.set(HoverEffectComponent())
+                newGlobe.addChild(closeBtn)
             }
         } else {
             removeSnowGlobe()
