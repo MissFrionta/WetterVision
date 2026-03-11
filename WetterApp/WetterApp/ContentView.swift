@@ -46,7 +46,7 @@ struct ContentView: View {
                     attachment.position = labelPos
                     attachment.components.set(BillboardComponent())
                     attachment.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-                    attachment.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.035)]))
+                    attachment.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.032)]))
                     attachment.components.set(HoverEffectComponent())
                     globe.addChild(attachment)
                 }
@@ -153,7 +153,6 @@ struct ContentView: View {
                         if let city = cityMatch {
                             selectCity(named: city.name)
                         }
-                        // Tap on globe itself does nothing — use close button on snow globe instead
                     }
                 }
         )
