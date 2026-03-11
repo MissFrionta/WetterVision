@@ -46,7 +46,7 @@ struct ContentView: View {
                     attachment.position = labelPos
                     attachment.components.set(BillboardComponent())
                     attachment.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-                    attachment.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.025)]))
+                    attachment.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.05)]))
                     attachment.components.set(HoverEffectComponent())
                     globe.addChild(attachment)
                 }
@@ -73,17 +73,17 @@ struct ContentView: View {
         } attachments: {
             ForEach(cities) { city in
                 Attachment(id: "label-\(city.name)") {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         Circle()
                             .fill(Color(city.pinColor))
-                            .frame(width: 8, height: 8)
+                            .frame(width: 10, height: 10)
                         Text(city.name)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(8)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.regularMaterial)
+                    .cornerRadius(10)
                 }
             }
 
