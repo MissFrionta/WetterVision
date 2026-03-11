@@ -46,7 +46,7 @@ struct ContentView: View {
                     attachment.position = labelPos
                     attachment.components.set(BillboardComponent())
                     attachment.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-                    attachment.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.032)]))
+                    attachment.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.025)]))
                     attachment.components.set(HoverEffectComponent())
                     globe.addChild(attachment)
                 }
@@ -73,34 +73,23 @@ struct ContentView: View {
         } attachments: {
             ForEach(cities) { city in
                 Attachment(id: "label-\(city.name)") {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 4) {
                         Circle()
                             .fill(Color(city.pinColor))
-                            .frame(width: 10, height: 10)
+                            .frame(width: 8, height: 8)
                         Text(city.name)
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold))
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
                     .background(.ultraThinMaterial)
-                    .cornerRadius(10)
+                    .cornerRadius(8)
                 }
             }
 
             if let city = selectedCity {
                 Attachment(id: "weather-panel") {
                     WeatherPanelView(city: city)
-                }
-                Attachment(id: "close-button") {
-                    Button {
-                        selectedCity = nil
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .bold))
-                    }
-                    .buttonStyle(.borderless)
-                    .frame(width: 32, height: 32)
-                    .background(.ultraThinMaterial, in: Circle())
                 }
             }
         }
@@ -151,6 +140,9 @@ struct ContentView: View {
                         }
                         if let city = cityMatch {
                             selectCity(named: city.name)
+                        } else {
+                            // Tap on globe itself — deselect city
+                            selectedCity = nil
                         }
                     }
                 }
@@ -239,16 +231,6 @@ struct ContentView: View {
                 panel.position = SIMD3<Float>(0, -0.22, 0.18)
                 panel.components.set(BillboardComponent())
                 newGlobe.addChild(panel)
-            }
-
-            // Attach close button (top-right of snow globe)
-            if let closeBtn = attachments.entity(for: "close-button") {
-                closeBtn.position = SIMD3<Float>(0.14, 0.14, 0.10)
-                closeBtn.components.set(BillboardComponent())
-                closeBtn.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-                closeBtn.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.025)]))
-                closeBtn.components.set(HoverEffectComponent())
-                newGlobe.addChild(closeBtn)
             }
         } else {
             removeSnowGlobe()
