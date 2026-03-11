@@ -91,6 +91,15 @@ struct ContentView: View {
                 Attachment(id: "weather-panel") {
                     WeatherPanelView(city: city)
                 }
+
+                Attachment(id: "close-snowglobe") {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .padding(4)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                }
             }
         }
         // Drag gesture — rotates whichever entity is dragged
@@ -128,8 +137,8 @@ struct ContentView: View {
                     if tappedName.hasPrefix("marker-") {
                         let cityName = String(tappedName.dropFirst("marker-".count))
                         selectCity(named: cityName)
-                    } else if isDragOnSnowGlobe(value.entity) {
-                        // Tap on snow globe glass — close snow globe
+                    } else if isCloseButton(value.entity) {
+                        // Tap on close button — close snow globe
                         selectedCity = nil
                     } else {
                         // Check if a label attachment was tapped (walk up hierarchy to find city name)
@@ -183,6 +192,16 @@ struct ContentView: View {
         selectedCity = cities.first { $0.name == cityName }
     }
 
+    /// Check if the tapped entity is the close button (by walking up the hierarchy).
+    private func isCloseButton(_ entity: Entity) -> Bool {
+        var current: Entity? = entity
+        while let e = current {
+            if e.name == "close-snowglobe" { return true }
+            current = e.parent
+        }
+        return false
+    }
+
     /// Check if the dragged entity belongs to the snow globe (by walking up the hierarchy).
     private func isDragOnSnowGlobe(_ entity: Entity) -> Bool {
         var current: Entity? = entity
@@ -232,6 +251,17 @@ struct ContentView: View {
                 panel.position = SIMD3<Float>(0, -0.22, 0.18)
                 panel.components.set(BillboardComponent())
                 newGlobe.addChild(panel)
+            }
+
+            // Attach close button (top-right of snow globe)
+            if let closeBtn = attachments.entity(for: "close-snowglobe") {
+                closeBtn.name = "close-snowglobe"
+                closeBtn.position = SIMD3<Float>(0.10, 0.14, 0.08)
+                closeBtn.components.set(BillboardComponent())
+                closeBtn.components.set(InputTargetComponent(allowedInputTypes: .indirect))
+                closeBtn.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.018)]))
+                closeBtn.components.set(HoverEffectComponent())
+                newGlobe.addChild(closeBtn)
             }
         } else {
             removeSnowGlobe()
