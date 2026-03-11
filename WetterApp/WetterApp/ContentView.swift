@@ -128,6 +128,9 @@ struct ContentView: View {
                     if tappedName.hasPrefix("marker-") {
                         let cityName = String(tappedName.dropFirst("marker-".count))
                         selectCity(named: cityName)
+                    } else if isDragOnSnowGlobe(value.entity) {
+                        // Tap on snow globe glass — close snow globe
+                        selectedCity = nil
                     } else {
                         // Check if a label attachment was tapped (walk up hierarchy to find city name)
                         let cityMatch = cities.first { city in
@@ -140,10 +143,8 @@ struct ContentView: View {
                         }
                         if let city = cityMatch {
                             selectCity(named: city.name)
-                        } else {
-                            // Tap on globe itself — deselect city
-                            selectedCity = nil
                         }
+                        // Tap on globe surface does nothing — globe stays in place
                     }
                 }
         )
