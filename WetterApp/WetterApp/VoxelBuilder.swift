@@ -2,6 +2,7 @@ import RealityKit
 import UIKit
 
 /// Builds voxel snow globe scenes for each city — no external assets needed.
+/// Uses mesh merging: all voxels of the same color become one ModelEntity.
 struct VoxelBuilder {
 
     static let grid: Float = 0.010
@@ -72,24 +73,137 @@ struct VoxelBuilder {
         static let flowerYellow = UIColor(red: 0.95, green: 0.85, blue: 0.30, alpha: 1)
     }
 
+    // MARK: - Mesh Merging
+
+    /// Groups voxels by color and creates one merged ModelEntity per color group.
+    final class VoxelCollector {
+
+        private struct ColorKey: Hashable {
+            let r: UInt8, g: UInt8, b: UInt8, a: UInt8
+            init(_ color: UIColor) {
+                var rf: CGFloat = 0, gf: CGFloat = 0, bf: CGFloat = 0, af: CGFloat = 0
+                color.getRed(&rf, green: &gf, blue: &bf, alpha: &af)
+                r = UInt8(min(max(rf * 255, 0), 255))
+                g = UInt8(min(max(gf * 255, 0), 255))
+                b = UInt8(min(max(bf * 255, 0), 255))
+                a = UInt8(min(max(af * 255, 0), 255))
+            }
+            var uiColor: UIColor {
+                UIColor(red: CGFloat(r)/255, green: CGFloat(g)/255, blue: CGFloat(b)/255, alpha: CGFloat(a)/255)
+            }
+        }
+
+        private var voxels: [ColorKey: [SIMD3<Float>]] = [:]
+        private let halfSize: Float
+
+        init(blockSize: Float = VoxelBuilder.block) {
+            self.halfSize = blockSize / 2
+        }
+
+        /// Add a voxel at grid coordinates.
+        func add(color: UIColor, x: Int, y: Int, z: Int) {
+            let pos = SIMD3<Float>(Float(x) * VoxelBuilder.grid, Float(y) * VoxelBuilder.grid, Float(z) * VoxelBuilder.grid)
+            addAt(color: color, position: pos)
+        }
+
+        /// Add a voxel at an absolute position.
+        func addAt(color: UIColor, position: SIMD3<Float>) {
+            let key = ColorKey(color)
+            voxels[key, default: []].append(position)
+        }
+
+        /// Creates one ModelEntity per color group and adds them to parent.
+        func flush(into parent: Entity) {
+            let h = halfSize
+            for (colorKey, positions) in voxels {
+                guard let mesh = Self.buildMergedMesh(positions: positions, halfSize: h) else { continue }
+                let mat = SimpleMaterial(color: colorKey.uiColor, isMetallic: false)
+                parent.addChild(ModelEntity(mesh: mesh, materials: [mat]))
+            }
+        }
+
+        private static func buildMergedMesh(positions: [SIMD3<Float>], halfSize h: Float) -> MeshResource? {
+            var pos = [SIMD3<Float>]()
+            var nrm = [SIMD3<Float>]()
+            var idx = [UInt32]()
+            pos.reserveCapacity(positions.count * 24)
+            nrm.reserveCapacity(positions.count * 24)
+            idx.reserveCapacity(positions.count * 36)
+
+            for p in positions {
+                let bi = UInt32(pos.count)
+
+                // +Z face
+                pos.append(contentsOf: [SIMD3(p.x-h, p.y-h, p.z+h), SIMD3(p.x+h, p.y-h, p.z+h),
+                                        SIMD3(p.x+h, p.y+h, p.z+h), SIMD3(p.x-h, p.y+h, p.z+h)])
+                nrm.append(contentsOf: repeatElement(SIMD3<Float>(0, 0, 1), count: 4))
+                idx.append(contentsOf: [bi, bi+1, bi+2, bi, bi+2, bi+3])
+
+                // -Z face
+                let b1 = bi + 4
+                pos.append(contentsOf: [SIMD3(p.x+h, p.y-h, p.z-h), SIMD3(p.x-h, p.y-h, p.z-h),
+                                        SIMD3(p.x-h, p.y+h, p.z-h), SIMD3(p.x+h, p.y+h, p.z-h)])
+                nrm.append(contentsOf: repeatElement(SIMD3<Float>(0, 0, -1), count: 4))
+                idx.append(contentsOf: [b1, b1+1, b1+2, b1, b1+2, b1+3])
+
+                // +X face
+                let b2 = bi + 8
+                pos.append(contentsOf: [SIMD3(p.x+h, p.y-h, p.z+h), SIMD3(p.x+h, p.y-h, p.z-h),
+                                        SIMD3(p.x+h, p.y+h, p.z-h), SIMD3(p.x+h, p.y+h, p.z+h)])
+                nrm.append(contentsOf: repeatElement(SIMD3<Float>(1, 0, 0), count: 4))
+                idx.append(contentsOf: [b2, b2+1, b2+2, b2, b2+2, b2+3])
+
+                // -X face
+                let b3 = bi + 12
+                pos.append(contentsOf: [SIMD3(p.x-h, p.y-h, p.z-h), SIMD3(p.x-h, p.y-h, p.z+h),
+                                        SIMD3(p.x-h, p.y+h, p.z+h), SIMD3(p.x-h, p.y+h, p.z-h)])
+                nrm.append(contentsOf: repeatElement(SIMD3<Float>(-1, 0, 0), count: 4))
+                idx.append(contentsOf: [b3, b3+1, b3+2, b3, b3+2, b3+3])
+
+                // +Y face
+                let b4 = bi + 16
+                pos.append(contentsOf: [SIMD3(p.x-h, p.y+h, p.z+h), SIMD3(p.x+h, p.y+h, p.z+h),
+                                        SIMD3(p.x+h, p.y+h, p.z-h), SIMD3(p.x-h, p.y+h, p.z-h)])
+                nrm.append(contentsOf: repeatElement(SIMD3<Float>(0, 1, 0), count: 4))
+                idx.append(contentsOf: [b4, b4+1, b4+2, b4, b4+2, b4+3])
+
+                // -Y face
+                let b5 = bi + 20
+                pos.append(contentsOf: [SIMD3(p.x-h, p.y-h, p.z-h), SIMD3(p.x+h, p.y-h, p.z-h),
+                                        SIMD3(p.x+h, p.y-h, p.z+h), SIMD3(p.x-h, p.y-h, p.z+h)])
+                nrm.append(contentsOf: repeatElement(SIMD3<Float>(0, -1, 0), count: 4))
+                idx.append(contentsOf: [b5, b5+1, b5+2, b5, b5+2, b5+3])
+            }
+
+            var descriptor = MeshDescriptor(name: "merged-voxels")
+            descriptor.positions = MeshBuffer(pos)
+            descriptor.normals = MeshBuffer(nrm)
+            descriptor.primitives = .triangles(idx)
+            return try? MeshResource.generate(from: [descriptor])
+        }
+    }
+
     // MARK: - Public API
 
     /// Build a snow globe for a specific city.
     static func buildSnowGlobe(for cityName: String) -> Entity {
         let root = Entity()
         root.name = "snowglobe-\(cityName)"
-        let mesh = MeshResource.generateBox(size: block)
 
         let scene = Entity()
         scene.name = "voxel-scene"
+        let collector = VoxelCollector()
+
         switch cityName {
-        case "Berlin":   buildBerlinScene(in: scene, mesh: mesh)
-        case "New York": buildNewYorkScene(in: scene, mesh: mesh)
-        case "Tokio":    buildTokioScene(in: scene, mesh: mesh)
-        case "London":   buildLondonScene(in: scene, mesh: mesh)
-        case "Paris":    buildParisScene(in: scene, mesh: mesh)
-        default:         buildGenericScene(in: scene, mesh: mesh)
+        case "Berlin":   buildBerlinScene(collector: collector)
+        case "New York": buildNewYorkScene(collector: collector)
+        case "Tokio":    buildTokioScene(collector: collector)
+        case "London":   buildLondonScene(collector: collector)
+        case "Paris":    buildParisScene(collector: collector)
+        default:         buildGenericScene(collector: collector)
         }
+
+        collector.flush(into: scene)
         scene.position.y = -0.07
         root.addChild(scene)
 
@@ -122,17 +236,13 @@ struct VoxelBuilder {
 
     // MARK: - Berlin: Fernsehturm + Plattenbauten
 
-    private static func buildBerlinScene(in parent: Entity, mesh: MeshResource) {
-        buildGrassGround(in: parent, mesh: mesh, radius: 8)
-
-        let towerMat = SimpleMaterial(color: Palette.tvTowerSilver, isMetallic: false)
-        let sphereMat = SimpleMaterial(color: Palette.tvTowerSphere, isMetallic: false)
+    private static func buildBerlinScene(collector c: VoxelCollector) {
+        buildGrassGround(collector: c, radius: 8)
 
         // Fernsehturm — thin shaft, sphere near top, antenna
         let tx = 0, tz = 0
-        // Shaft (1 wide, 18 tall)
         for y in 1...18 {
-            parent.addChild(voxel(mesh: mesh, mat: towerMat, x: tx, y: y, z: tz))
+            c.add(color: Palette.tvTowerSilver, x: tx, y: y, z: tz)
         }
         // Sphere bulge (3x3x3 sphere at y=14..16)
         for dy in -1...1 {
@@ -140,7 +250,7 @@ struct VoxelBuilder {
                 for dz in -1...1 {
                     let dist = abs(dx) + abs(dy) + abs(dz)
                     if dist <= 2 {
-                        parent.addChild(voxel(mesh: mesh, mat: sphereMat, x: tx + dx, y: 15 + dy, z: tz + dz))
+                        c.add(color: Palette.tvTowerSphere, x: tx + dx, y: 15 + dy, z: tz + dz)
                     }
                 }
             }
@@ -150,111 +260,93 @@ struct VoxelBuilder {
             for dz in -2...2 {
                 let dist = abs(dx) + abs(dz)
                 if dist == 2 {
-                    parent.addChild(voxel(mesh: mesh, mat: sphereMat, x: tx + dx, y: 15, z: tz + dz))
+                    c.add(color: Palette.tvTowerSphere, x: tx + dx, y: 15, z: tz + dz)
                 }
             }
         }
         // Antenna tip
         for y in 19...22 {
-            parent.addChild(voxel(mesh: mesh, mat: towerMat, x: tx, y: y, z: tz))
+            c.add(color: Palette.tvTowerSilver, x: tx, y: y, z: tz)
         }
 
-        // Plattenbau left
-        buildPlattenbau(in: parent, gx: -8, gz: -3, w: 5, h: 8, mesh: mesh)
-        // Plattenbau right
-        buildPlattenbau(in: parent, gx: 4, gz: 2, w: 6, h: 6, mesh: mesh)
-        // Small one behind
-        buildPlattenbau(in: parent, gx: -4, gz: 5, w: 4, h: 5, mesh: mesh)
+        // Plattenbauten
+        buildPlattenbau(collector: c, gx: -8, gz: -3, w: 5, h: 8)
+        buildPlattenbau(collector: c, gx: 4, gz: 2, w: 6, h: 6)
+        buildPlattenbau(collector: c, gx: -4, gz: 5, w: 4, h: 5)
 
-        // A couple of trees
-        buildRoundTree(in: parent, gx: -4, gz: -7, height: 4, mesh: mesh)
-        buildRoundTree(in: parent, gx: 8, gz: -4, height: 3, mesh: mesh)
+        // Trees
+        buildRoundTree(collector: c, gx: -4, gz: -7, height: 4)
+        buildRoundTree(collector: c, gx: 8, gz: -4, height: 3)
     }
 
-    private static func buildPlattenbau(in parent: Entity, gx: Int, gz: Int, w: Int, h: Int, mesh: MeshResource) {
-        let wallMat = SimpleMaterial(color: Palette.plattenbau, isMetallic: false)
-        let wallDkMat = SimpleMaterial(color: Palette.plattenbauDark, isMetallic: false)
-        let winMat = SimpleMaterial(color: Palette.windowBlue, isMetallic: false)
-
-        let d = 3 // depth
+    private static func buildPlattenbau(collector c: VoxelCollector, gx: Int, gz: Int, w: Int, h: Int) {
+        let d = 3
         for y in 1...h {
             for dx in 0..<w {
                 for dz in 0..<d {
                     let isExterior = dx == 0 || dx == w - 1 || dz == 0 || dz == d - 1
                     guard isExterior else { continue }
 
-                    // Windows every other block on front/back, starting at y=2
                     let isFrontBack = dz == 0 || dz == d - 1
                     if isFrontBack && y >= 2 && y % 2 == 0 && dx > 0 && dx < w - 1 && dx % 2 == 1 {
-                        parent.addChild(voxel(mesh: mesh, mat: winMat, x: gx + dx, y: y, z: gz + dz))
+                        c.add(color: Palette.windowBlue, x: gx + dx, y: y, z: gz + dz)
                         continue
                     }
 
-                    let mat = (dx + y) % 3 == 0 ? wallDkMat : wallMat
-                    parent.addChild(voxel(mesh: mesh, mat: mat, x: gx + dx, y: y, z: gz + dz))
+                    let color = (dx + y) % 3 == 0 ? Palette.plattenbauDark : Palette.plattenbau
+                    c.add(color: color, x: gx + dx, y: y, z: gz + dz)
                 }
             }
         }
         // Flat roof
-        let roofMat = SimpleMaterial(color: Palette.concreteDark, isMetallic: false)
         for dx in 0..<w {
             for dz in 0..<d {
-                parent.addChild(voxel(mesh: mesh, mat: roofMat, x: gx + dx, y: h + 1, z: gz + dz))
+                c.add(color: Palette.concreteDark, x: gx + dx, y: h + 1, z: gz + dz)
             }
         }
     }
 
     // MARK: - New York: Skyscrapers
 
-    private static func buildNewYorkScene(in parent: Entity, mesh: MeshResource) {
-        buildConcreteGround(in: parent, mesh: mesh, radius: 8)
+    private static func buildNewYorkScene(collector c: VoxelCollector) {
+        buildConcreteGround(collector: c, radius: 8)
 
-        // Skyline — several buildings of different heights
-        buildSkyscraper(in: parent, gx: -6, gz: -2, w: 4, d: 4, h: 16, mesh: mesh)
-        buildSkyscraper(in: parent, gx: -1, gz: -3, w: 3, d: 3, h: 22, mesh: mesh) // Empire State
-        buildSkyscraper(in: parent, gx: 3, gz: -1, w: 4, d: 3, h: 13, mesh: mesh)
-        buildSkyscraper(in: parent, gx: -5, gz: 3, w: 3, d: 4, h: 10, mesh: mesh)
-        buildSkyscraper(in: parent, gx: 2, gz: 4, w: 5, d: 3, h: 8, mesh: mesh)
+        buildSkyscraper(collector: c, gx: -6, gz: -2, w: 4, d: 4, h: 16)
+        buildSkyscraper(collector: c, gx: -1, gz: -3, w: 3, d: 3, h: 22)
+        buildSkyscraper(collector: c, gx: 3, gz: -1, w: 4, d: 3, h: 13)
+        buildSkyscraper(collector: c, gx: -5, gz: 3, w: 3, d: 4, h: 10)
+        buildSkyscraper(collector: c, gx: 2, gz: 4, w: 5, d: 3, h: 8)
 
         // Antenna on tallest building
-        let antMat = SimpleMaterial(color: Palette.steel, isMetallic: false)
         for y in 23...26 {
-            parent.addChild(voxel(mesh: mesh, mat: antMat, x: 0, y: y, z: -2))
+            c.add(color: Palette.steel, x: 0, y: y, z: -2)
         }
 
         // Street-level yellow detail (taxi hint)
-        let yellowMat = SimpleMaterial(color: Palette.flowerYellow, isMetallic: false)
-        parent.addChild(voxel(mesh: mesh, mat: yellowMat, x: -3, y: 1, z: -6))
-        parent.addChild(voxel(mesh: mesh, mat: yellowMat, x: -2, y: 1, z: -6))
+        c.add(color: Palette.flowerYellow, x: -3, y: 1, z: -6)
+        c.add(color: Palette.flowerYellow, x: -2, y: 1, z: -6)
     }
 
-    private static func buildSkyscraper(in parent: Entity, gx: Int, gz: Int, w: Int, d: Int, h: Int, mesh: MeshResource) {
-        let steelMat = SimpleMaterial(color: Palette.steel, isMetallic: false)
-        let steelDkMat = SimpleMaterial(color: Palette.steelDark, isMetallic: false)
-        let steelLtMat = SimpleMaterial(color: Palette.steelLight, isMetallic: false)
-        let winMat = SimpleMaterial(color: Palette.windowBlue, isMetallic: false)
-        let winLitMat = SimpleMaterial(color: Palette.windowYellow, isMetallic: false)
-
+    private static func buildSkyscraper(collector c: VoxelCollector, gx: Int, gz: Int, w: Int, d: Int, h: Int) {
         for y in 1...h {
             for dx in 0..<w {
                 for dz in 0..<d {
                     let isExterior = dx == 0 || dx == w - 1 || dz == 0 || dz == d - 1
                     guard isExterior else { continue }
 
-                    // Window grid
                     let isFace = (dz == 0 || dz == d - 1) && dx > 0 && dx < w - 1
                     let isSide = (dx == 0 || dx == w - 1) && dz > 0 && dz < d - 1
                     if (isFace || isSide) && y >= 2 && y % 2 == 0 {
-                        let wm = (dx + y + dz) % 5 == 0 ? winLitMat : winMat
-                        parent.addChild(voxel(mesh: mesh, mat: wm, x: gx + dx, y: y, z: gz + dz))
+                        let color = (dx + y + dz) % 5 == 0 ? Palette.windowYellow : Palette.windowBlue
+                        c.add(color: color, x: gx + dx, y: y, z: gz + dz)
                         continue
                     }
 
-                    let mat: SimpleMaterial
-                    if y == h { mat = steelLtMat }
-                    else if (dx + y) % 4 == 0 { mat = steelDkMat }
-                    else { mat = steelMat }
-                    parent.addChild(voxel(mesh: mesh, mat: mat, x: gx + dx, y: y, z: gz + dz))
+                    let color: UIColor
+                    if y == h { color = Palette.steelLight }
+                    else if (dx + y) % 4 == 0 { color = Palette.steelDark }
+                    else { color = Palette.steel }
+                    c.add(color: color, x: gx + dx, y: y, z: gz + dz)
                 }
             }
         }
@@ -262,81 +354,65 @@ struct VoxelBuilder {
 
     // MARK: - Tokio: Pagode + Kirschbaum + Teich
 
-    private static func buildTokioScene(in parent: Entity, mesh: MeshResource) {
-        buildGrassGround(in: parent, mesh: mesh, radius: 8)
+    private static func buildTokioScene(collector c: VoxelCollector) {
+        buildGrassGround(collector: c, radius: 8)
 
-        // Pagoda (center-left)
-        buildPagoda(in: parent, gx: -3, gz: 0, mesh: mesh)
+        buildPagoda(collector: c, gx: -3, gz: 0)
 
-        // Cherry blossom tree (right side)
-        buildCherryTree(in: parent, gx: 5, gz: -3, mesh: mesh)
-        buildCherryTree(in: parent, gx: 7, gz: 4, mesh: mesh)
+        buildCherryTree(collector: c, gx: 5, gz: -3)
+        buildCherryTree(collector: c, gx: 7, gz: 4)
 
-        // Pond (front-right area, flat blue voxels at ground level)
-        let waterMat = SimpleMaterial(color: Palette.water, isMetallic: false)
-        let waterDkMat = SimpleMaterial(color: Palette.waterDark, isMetallic: false)
-        let pondCx = 4, pondCz = 6
-        let pondR = 3
+        // Pond
+        let pondCx = 4, pondCz = 6, pondR = 3
         for x in (pondCx - pondR)...(pondCx + pondR) {
             for z in (pondCz - pondR)...(pondCz + pondR) {
                 let dist = sqrt(Float((x - pondCx) * (x - pondCx) + (z - pondCz) * (z - pondCz)))
                 guard dist <= Float(pondR) + 0.3 else { continue }
-                let mat = (x + z) % 3 == 0 ? waterDkMat : waterMat
-                parent.addChild(voxel(mesh: mesh, mat: mat, x: x, y: 1, z: z))
+                let color = (x + z) % 3 == 0 ? Palette.waterDark : Palette.water
+                c.add(color: color, x: x, y: 1, z: z)
             }
         }
 
         // Stone lantern near pond
-        let stoneMat = SimpleMaterial(color: Palette.stone, isMetallic: false)
         for y in 1...3 {
-            parent.addChild(voxel(mesh: mesh, mat: stoneMat, x: 1, y: y, z: 5))
+            c.add(color: Palette.stone, x: 1, y: y, z: 5)
         }
-        let lanternMat = SimpleMaterial(color: Palette.windowYellow, isMetallic: false)
-        parent.addChild(voxel(mesh: mesh, mat: lanternMat, x: 1, y: 4, z: 5))
-        parent.addChild(voxel(mesh: mesh, mat: stoneMat, x: 1, y: 5, z: 5))
+        c.add(color: Palette.windowYellow, x: 1, y: 4, z: 5)
+        c.add(color: Palette.stone, x: 1, y: 5, z: 5)
     }
 
-    private static func buildPagoda(in parent: Entity, gx: Int, gz: Int, mesh: MeshResource) {
-        let wallMat = SimpleMaterial(color: Palette.wall, isMetallic: false)
-        let roofMat = SimpleMaterial(color: Palette.pagodaRed, isMetallic: false)
-        let roofDkMat = SimpleMaterial(color: Palette.pagodaRedDark, isMetallic: false)
-
-        // 3 tiers, each smaller and with overhanging roof
+    private static func buildPagoda(collector c: VoxelCollector, gx: Int, gz: Int) {
         let tiers: [(width: Int, height: Int)] = [(7, 4), (5, 3), (3, 3)]
         var currentY = 1
 
         for (tierIdx, tier) in tiers.enumerated() {
             let halfW = tier.width / 2
 
-            // Walls for this tier
             for y in currentY..<(currentY + tier.height) {
                 for dx in -halfW...halfW {
                     for dz in -halfW...halfW {
                         let isExterior = abs(dx) == halfW || abs(dz) == halfW
                         guard isExterior else { continue }
-                        // Door on ground floor front
                         if tierIdx == 0 && dz == -halfW && abs(dx) <= 1 && y < currentY + 2 { continue }
-                        parent.addChild(voxel(mesh: mesh, mat: wallMat, x: gx + dx, y: y, z: gz + dz))
+                        c.add(color: Palette.wall, x: gx + dx, y: y, z: gz + dz)
                     }
                 }
             }
 
-            // Overhanging roof
             let roofY = currentY + tier.height
             let roofExtend = halfW + 2
             for dx in -roofExtend...roofExtend {
                 for dz in -roofExtend...roofExtend {
                     let isEdge = abs(dx) == roofExtend || abs(dz) == roofExtend
-                    let mat = isEdge ? roofDkMat : roofMat
-                    parent.addChild(voxel(mesh: mesh, mat: mat, x: gx + dx, y: roofY, z: gz + dz))
+                    let color = isEdge ? Palette.pagodaRedDark : Palette.pagodaRed
+                    c.add(color: color, x: gx + dx, y: roofY, z: gz + dz)
                 }
             }
-            // Slight upward curve at roof edges (second layer, inner part only)
             let innerR = halfW + 1
             for dx in -innerR...innerR {
                 for dz in -innerR...innerR {
                     if abs(dx) <= halfW && abs(dz) <= halfW {
-                        parent.addChild(voxel(mesh: mesh, mat: roofMat, x: gx + dx, y: roofY + 1, z: gz + dz))
+                        c.add(color: Palette.pagodaRed, x: gx + dx, y: roofY + 1, z: gz + dz)
                     }
                 }
             }
@@ -345,34 +421,23 @@ struct VoxelBuilder {
         }
 
         // Spire on top
-        let spireMat = SimpleMaterial(color: Palette.clockGold, isMetallic: false)
         for y in currentY...(currentY + 3) {
-            parent.addChild(voxel(mesh: mesh, mat: spireMat, x: gx, y: y, z: gz))
+            c.add(color: Palette.clockGold, x: gx, y: y, z: gz)
         }
     }
 
-    private static func buildCherryTree(in parent: Entity, gx: Int, gz: Int, mesh: MeshResource) {
-        let trunkMat = SimpleMaterial(color: Palette.trunk, isMetallic: false)
-        let sakuraMats = [
-            SimpleMaterial(color: Palette.sakuraPink, isMetallic: false),
-            SimpleMaterial(color: Palette.sakuraLight, isMetallic: false)
-        ]
-
-        // Trunk
+    private static func buildCherryTree(collector c: VoxelCollector, gx: Int, gz: Int) {
         for y in 1...5 {
-            parent.addChild(voxel(mesh: mesh, mat: trunkMat, x: gx, y: y, z: gz))
+            c.add(color: Palette.trunk, x: gx, y: y, z: gz)
         }
-
-        // Pink crown (spherical)
-        let r = 2
-        let centerY = 7
+        let r = 2, centerY = 7
         for dy in -r...r {
             for dx in -r...r {
                 for dz in -r...r {
                     let dist = sqrt(Float(dx * dx + dy * dy + dz * dz))
                     guard dist <= Float(r) + 0.3 else { continue }
-                    let mat = sakuraMats[abs(dx + dz + dy) % 2]
-                    parent.addChild(voxel(mesh: mesh, mat: mat, x: gx + dx, y: centerY + dy, z: gz + dz))
+                    let color = abs(dx + dz + dy) % 2 == 0 ? Palette.sakuraPink : Palette.sakuraLight
+                    c.add(color: color, x: gx + dx, y: centerY + dy, z: gz + dz)
                 }
             }
         }
@@ -380,14 +445,8 @@ struct VoxelBuilder {
 
     // MARK: - London: Big Ben + Parliament
 
-    private static func buildLondonScene(in parent: Entity, mesh: MeshResource) {
-        buildGrassGround(in: parent, mesh: mesh, radius: 8)
-
-        // Big Ben tower
-        let brickMat = SimpleMaterial(color: Palette.londonBrick, isMetallic: false)
-        let brickDkMat = SimpleMaterial(color: Palette.londonBrickDk, isMetallic: false)
-        let clockMat = SimpleMaterial(color: Palette.clockGold, isMetallic: false)
-        let roofMat = SimpleMaterial(color: Palette.londonRoof, isMetallic: false)
+    private static func buildLondonScene(collector c: VoxelCollector) {
+        buildGrassGround(collector: c, radius: 8)
 
         let bx = 0, bz = 0
 
@@ -395,8 +454,8 @@ struct VoxelBuilder {
         for y in 1...16 {
             for dx in -1...1 {
                 for dz in -1...1 {
-                    let mat = (dx + y + dz) % 3 == 0 ? brickDkMat : brickMat
-                    parent.addChild(voxel(mesh: mesh, mat: mat, x: bx + dx, y: y, z: bz + dz))
+                    let color = (dx + y + dz) % 3 == 0 ? Palette.londonBrickDk : Palette.londonBrick
+                    c.add(color: color, x: bx + dx, y: y, z: bz + dz)
                 }
             }
         }
@@ -404,26 +463,26 @@ struct VoxelBuilder {
         // Clock face (gold blocks on all 4 sides at y=13..14)
         for y in 13...14 {
             for d in -1...1 {
-                parent.addChild(voxel(mesh: mesh, mat: clockMat, x: bx + d, y: y, z: bz - 2))  // front
-                parent.addChild(voxel(mesh: mesh, mat: clockMat, x: bx + d, y: y, z: bz + 2))  // back
-                parent.addChild(voxel(mesh: mesh, mat: clockMat, x: bx - 2, y: y, z: bz + d))  // left
-                parent.addChild(voxel(mesh: mesh, mat: clockMat, x: bx + 2, y: y, z: bz + d))  // right
+                c.add(color: Palette.clockGold, x: bx + d, y: y, z: bz - 2)
+                c.add(color: Palette.clockGold, x: bx + d, y: y, z: bz + 2)
+                c.add(color: Palette.clockGold, x: bx - 2, y: y, z: bz + d)
+                c.add(color: Palette.clockGold, x: bx + 2, y: y, z: bz + d)
             }
         }
 
         // Pointed spire
         for dx in -1...1 {
             for dz in -1...1 {
-                parent.addChild(voxel(mesh: mesh, mat: roofMat, x: bx + dx, y: 17, z: bz + dz))
+                c.add(color: Palette.londonRoof, x: bx + dx, y: 17, z: bz + dz)
             }
         }
-        parent.addChild(voxel(mesh: mesh, mat: roofMat, x: bx, y: 18, z: bz))
-        parent.addChild(voxel(mesh: mesh, mat: roofMat, x: bx + 1, y: 18, z: bz))
-        parent.addChild(voxel(mesh: mesh, mat: roofMat, x: bx, y: 18, z: bz + 1))
-        parent.addChild(voxel(mesh: mesh, mat: roofMat, x: bx, y: 19, z: bz))
-        parent.addChild(voxel(mesh: mesh, mat: roofMat, x: bx, y: 20, z: bz))
+        c.add(color: Palette.londonRoof, x: bx, y: 18, z: bz)
+        c.add(color: Palette.londonRoof, x: bx + 1, y: 18, z: bz)
+        c.add(color: Palette.londonRoof, x: bx, y: 18, z: bz + 1)
+        c.add(color: Palette.londonRoof, x: bx, y: 19, z: bz)
+        c.add(color: Palette.londonRoof, x: bx, y: 20, z: bz)
 
-        // Parliament building (long, low, to the right)
+        // Parliament building
         let px = 4, pz = -2
         let pw = 8, pd = 4, ph = 5
         for y in 1...ph {
@@ -433,67 +492,62 @@ struct VoxelBuilder {
                     guard isExterior else { continue }
                     let isFace = dz == 0 || dz == pd - 1
                     if isFace && y >= 3 && dx > 0 && dx < pw - 1 && dx % 2 == 1 {
-                        parent.addChild(voxel(mesh: mesh, mat: SimpleMaterial(color: Palette.windowBlue, isMetallic: false),
-                                              x: px + dx, y: y, z: pz + dz))
+                        c.add(color: Palette.windowBlue, x: px + dx, y: y, z: pz + dz)
                         continue
                     }
-                    let mat = (dx + y) % 3 == 0 ? brickDkMat : brickMat
-                    parent.addChild(voxel(mesh: mesh, mat: mat, x: px + dx, y: y, z: pz + dz))
+                    let color = (dx + y) % 3 == 0 ? Palette.londonBrickDk : Palette.londonBrick
+                    c.add(color: color, x: px + dx, y: y, z: pz + dz)
                 }
             }
         }
         // Parliament flat roof
         for dx in 0..<pw {
             for dz in 0..<pd {
-                parent.addChild(voxel(mesh: mesh, mat: roofMat, x: px + dx, y: ph + 1, z: pz + dz))
+                c.add(color: Palette.londonRoof, x: px + dx, y: ph + 1, z: pz + dz)
             }
         }
 
-        // A few trees
-        buildRoundTree(in: parent, gx: -6, gz: -5, height: 4, mesh: mesh)
-        buildRoundTree(in: parent, gx: -7, gz: 4, height: 3, mesh: mesh)
-        buildRoundTree(in: parent, gx: 8, gz: 5, height: 3, mesh: mesh)
+        // Trees
+        buildRoundTree(collector: c, gx: -6, gz: -5, height: 4)
+        buildRoundTree(collector: c, gx: -7, gz: 4, height: 3)
+        buildRoundTree(collector: c, gx: 8, gz: 5, height: 3)
     }
 
-    // MARK: - Paris: Eiffelturm + Häuser
+    // MARK: - Paris: Eiffelturm + Haeuser
 
-    private static func buildParisScene(in parent: Entity, mesh: MeshResource) {
-        buildGrassGround(in: parent, mesh: mesh, radius: 8)
+    private static func buildParisScene(collector c: VoxelCollector) {
+        buildGrassGround(collector: c, radius: 8)
 
-        let eMat = SimpleMaterial(color: Palette.eiffelBrown, isMetallic: false)
-        let eDkMat = SimpleMaterial(color: Palette.eiffelDark, isMetallic: false)
         let ex = 0, ez = 0
 
         // Eiffel Tower — 4 legs merging into narrowing tower
-        // Layer 0-3: Four separate legs (2x2 each, spread apart)
         let legPositions = [(-3, -3), (-3, 2), (2, -3), (2, 2)]
         for y in 1...4 {
             for (lx, lz) in legPositions {
-                // Each leg moves inward as it goes up
                 let inward = y / 2
                 let ax = lx + (lx < 0 ? inward : -inward)
                 let az = lz + (lz < 0 ? inward : -inward)
-                let mat = (ax + y) % 2 == 0 ? eMat : eDkMat
-                parent.addChild(voxel(mesh: mesh, mat: mat, x: ex + ax, y: y, z: ez + az))
+                let color = (ax + y) % 2 == 0 ? Palette.eiffelBrown : Palette.eiffelDark
+                c.add(color: color, x: ex + ax, y: y, z: ez + az)
             }
         }
 
-        // Layer 5-6: Platform (wider section where legs meet)
+        // Platform
         for dx in -2...2 {
             for dz in -2...2 {
-                let mat = (dx + dz) % 2 == 0 ? eMat : eDkMat
-                parent.addChild(voxel(mesh: mesh, mat: mat, x: ex + dx, y: 5, z: ez + dz))
+                let color = (dx + dz) % 2 == 0 ? Palette.eiffelBrown : Palette.eiffelDark
+                c.add(color: color, x: ex + dx, y: 5, z: ez + dz)
             }
         }
 
-        // Layer 6-12: Narrowing shaft
+        // Narrowing shaft
         for y in 6...12 {
             let r = y < 9 ? 1 : 0
             for dx in -r...r {
                 for dz in -r...r {
                     if r > 0 && abs(dx) == r && abs(dz) == r { continue }
-                    let mat = (dx + y) % 2 == 0 ? eMat : eDkMat
-                    parent.addChild(voxel(mesh: mesh, mat: mat, x: ex + dx, y: y, z: ez + dz))
+                    let color = (dx + y) % 2 == 0 ? Palette.eiffelBrown : Palette.eiffelDark
+                    c.add(color: color, x: ex + dx, y: y, z: ez + dz)
                 }
             }
         }
@@ -502,31 +556,26 @@ struct VoxelBuilder {
         for dx in -2...2 {
             for dz in -2...2 {
                 if abs(dx) == 2 && abs(dz) == 2 { continue }
-                parent.addChild(voxel(mesh: mesh, mat: eMat, x: ex + dx, y: 9, z: ez + dz))
+                c.add(color: Palette.eiffelBrown, x: ex + dx, y: 9, z: ez + dz)
             }
         }
 
         // Top antenna
         for y in 13...16 {
-            parent.addChild(voxel(mesh: mesh, mat: eMat, x: ex, y: y, z: ez))
+            c.add(color: Palette.eiffelBrown, x: ex, y: y, z: ez)
         }
 
-        // Parisian buildings (right side)
-        buildParisHouse(in: parent, gx: 5, gz: -3, w: 4, h: 5, mesh: mesh)
-        buildParisHouse(in: parent, gx: 5, gz: 2, w: 3, h: 4, mesh: mesh)
-        buildParisHouse(in: parent, gx: -7, gz: -2, w: 3, h: 5, mesh: mesh)
+        // Parisian buildings
+        buildParisHouse(collector: c, gx: 5, gz: -3, w: 4, h: 5)
+        buildParisHouse(collector: c, gx: 5, gz: 2, w: 3, h: 4)
+        buildParisHouse(collector: c, gx: -7, gz: -2, w: 3, h: 5)
 
         // Trees
-        buildRoundTree(in: parent, gx: -5, gz: 5, height: 4, mesh: mesh)
-        buildRoundTree(in: parent, gx: 8, gz: 6, height: 3, mesh: mesh)
+        buildRoundTree(collector: c, gx: -5, gz: 5, height: 4)
+        buildRoundTree(collector: c, gx: 8, gz: 6, height: 3)
     }
 
-    private static func buildParisHouse(in parent: Entity, gx: Int, gz: Int, w: Int, h: Int, mesh: MeshResource) {
-        let wallMat = SimpleMaterial(color: Palette.parisStone, isMetallic: false)
-        let wallDkMat = SimpleMaterial(color: Palette.parisStoneDk, isMetallic: false)
-        let roofMat = SimpleMaterial(color: Palette.parisRoof, isMetallic: false)
-        let winMat = SimpleMaterial(color: Palette.windowBlue, isMetallic: false)
-
+    private static func buildParisHouse(collector c: VoxelCollector, gx: Int, gz: Int, w: Int, h: Int) {
         let d = 3
         for y in 1...h {
             for dx in 0..<w {
@@ -535,77 +584,66 @@ struct VoxelBuilder {
                     guard isExterior else { continue }
                     let isFace = dz == 0 || dz == d - 1
                     if isFace && y >= 2 && dx > 0 && dx < w - 1 && y % 2 == 0 {
-                        parent.addChild(voxel(mesh: mesh, mat: winMat, x: gx + dx, y: y, z: gz + dz))
+                        c.add(color: Palette.windowBlue, x: gx + dx, y: y, z: gz + dz)
                         continue
                     }
-                    let mat = (dx + y) % 3 == 0 ? wallDkMat : wallMat
-                    parent.addChild(voxel(mesh: mesh, mat: mat, x: gx + dx, y: y, z: gz + dz))
+                    let color = (dx + y) % 3 == 0 ? Palette.parisStoneDk : Palette.parisStone
+                    c.add(color: color, x: gx + dx, y: y, z: gz + dz)
                 }
             }
         }
-        // Mansard roof (angled, typical Paris)
+        // Mansard roof
         for dz in -1..<(d + 1) {
             for dx in 0..<w {
-                parent.addChild(voxel(mesh: mesh, mat: roofMat, x: gx + dx, y: h + 1, z: gz + dz))
+                c.add(color: Palette.parisRoof, x: gx + dx, y: h + 1, z: gz + dz)
             }
         }
     }
 
-    // MARK: - Generic Scene (fallback for unknown cities)
+    // MARK: - Generic Scene (fallback)
 
-    private static func buildGenericScene(in parent: Entity, mesh: MeshResource) {
-        buildGrassGround(in: parent, mesh: mesh, radius: 8)
-        buildRoundTree(in: parent, gx: -4, gz: -3, height: 5, mesh: mesh)
-        buildRoundTree(in: parent, gx: 5, gz: 3, height: 4, mesh: mesh)
-        buildRoundTree(in: parent, gx: 0, gz: 6, height: 3, mesh: mesh)
+    private static func buildGenericScene(collector c: VoxelCollector) {
+        buildGrassGround(collector: c, radius: 8)
+        buildRoundTree(collector: c, gx: -4, gz: -3, height: 5)
+        buildRoundTree(collector: c, gx: 5, gz: 3, height: 4)
+        buildRoundTree(collector: c, gx: 0, gz: 6, height: 3)
     }
 
     // MARK: - Shared Ground Types
 
-    private static func buildGrassGround(in parent: Entity, mesh: MeshResource, radius: Int) {
-        let lightMat = SimpleMaterial(color: Palette.grassLight, isMetallic: false)
-        let darkMat = SimpleMaterial(color: Palette.grassDark, isMetallic: false)
-        let dirtMat = SimpleMaterial(color: Palette.dirt, isMetallic: false)
-
+    private static func buildGrassGround(collector c: VoxelCollector, radius: Int) {
         for x in -radius...radius {
             for z in -radius...radius {
                 let dist = sqrt(Float(x * x + z * z))
                 guard dist <= Float(radius) + 0.5 else { continue }
-                let grassMat = (x + z) % 2 == 0 ? lightMat : darkMat
-                parent.addChild(voxel(mesh: mesh, mat: grassMat, x: x, y: 0, z: z))
-                // Only one dirt layer instead of two
-                parent.addChild(voxel(mesh: mesh, mat: dirtMat, x: x, y: -1, z: z))
+                let color = (x + z) % 2 == 0 ? Palette.grassLight : Palette.grassDark
+                c.add(color: color, x: x, y: 0, z: z)
+                c.add(color: Palette.dirt, x: x, y: -1, z: z)
             }
         }
     }
 
-    private static func buildConcreteGround(in parent: Entity, mesh: MeshResource, radius: Int) {
-        let concMat = SimpleMaterial(color: Palette.concrete, isMetallic: false)
-        let concDkMat = SimpleMaterial(color: Palette.concreteDark, isMetallic: false)
-
+    private static func buildConcreteGround(collector c: VoxelCollector, radius: Int) {
         for x in -radius...radius {
             for z in -radius...radius {
                 let dist = sqrt(Float(x * x + z * z))
                 guard dist <= Float(radius) + 0.5 else { continue }
-                let mat = (x + z) % 2 == 0 ? concMat : concDkMat
-                parent.addChild(voxel(mesh: mesh, mat: mat, x: x, y: 0, z: z))
-                parent.addChild(voxel(mesh: mesh, mat: concDkMat, x: x, y: -1, z: z))
+                let color = (x + z) % 2 == 0 ? Palette.concrete : Palette.concreteDark
+                c.add(color: color, x: x, y: 0, z: z)
+                c.add(color: Palette.concreteDark, x: x, y: -1, z: z)
             }
         }
     }
 
     // MARK: - Shared Building Blocks
 
-    private static func buildRoundTree(in parent: Entity, gx: Int, gz: Int, height: Int, mesh: MeshResource,
+    private static func buildRoundTree(collector c: VoxelCollector, gx: Int, gz: Int, height: Int,
                                        leafColor1: UIColor? = nil, leafColor2: UIColor? = nil) {
-        let trunkMat = SimpleMaterial(color: Palette.trunk, isMetallic: false)
-        let leafMats = [
-            SimpleMaterial(color: leafColor1 ?? Palette.leaves, isMetallic: false),
-            SimpleMaterial(color: leafColor2 ?? Palette.leavesBright, isMetallic: false)
-        ]
+        let lc1 = leafColor1 ?? Palette.leaves
+        let lc2 = leafColor2 ?? Palette.leavesBright
 
         for y in 1...height {
-            parent.addChild(voxel(mesh: mesh, mat: trunkMat, x: gx, y: y, z: gz))
+            c.add(color: Palette.trunk, x: gx, y: y, z: gz)
         }
 
         let r = 2
@@ -615,18 +653,10 @@ struct VoxelBuilder {
                 for dz in -r...r {
                     let dist = sqrt(Float(dx * dx + dy * dy + dz * dz))
                     guard dist <= Float(r) + 0.3 else { continue }
-                    let mat = leafMats[abs(dx + dz + dy) % 2]
-                    parent.addChild(voxel(mesh: mesh, mat: mat, x: gx + dx, y: centerY + dy, z: gz + dz))
+                    let color = abs(dx + dz + dy) % 2 == 0 ? lc1 : lc2
+                    c.add(color: color, x: gx + dx, y: centerY + dy, z: gz + dz)
                 }
             }
         }
-    }
-
-    // MARK: - Core Helper
-
-    private static func voxel(mesh: MeshResource, mat: SimpleMaterial, x: Int, y: Int, z: Int) -> ModelEntity {
-        let entity = ModelEntity(mesh: mesh, materials: [mat])
-        entity.position = SIMD3<Float>(Float(x) * grid, Float(y) * grid, Float(z) * grid)
-        return entity
     }
 }
