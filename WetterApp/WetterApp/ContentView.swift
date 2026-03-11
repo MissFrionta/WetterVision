@@ -46,7 +46,7 @@ struct ContentView: View {
                     attachment.position = labelPos
                     attachment.components.set(BillboardComponent())
                     attachment.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-                    attachment.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.032)]))
+                    attachment.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.045)]))
                     attachment.components.set(HoverEffectComponent())
                     globe.addChild(attachment)
                 }

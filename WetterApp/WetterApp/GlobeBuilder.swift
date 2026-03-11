@@ -62,11 +62,14 @@ struct GlobeBuilder {
             stick.position = SIMD3<Float>(0, stickHeight / 2, 0)
             pinRoot.addChild(stick)
 
-            // Head (colored sphere on top)
+            // Head (colored sphere on top) — with large collision for easy tapping
             let headMat = SimpleMaterial(color: city.pinColor, isMetallic: false)
             let head = ModelEntity(mesh: headMesh, materials: [headMat])
             head.position = SIMD3<Float>(0, stickHeight + markerRadius, 0)
             head.name = "marker-\(city.name)"
+            head.components.set(InputTargetComponent(allowedInputTypes: .indirect))
+            head.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.02)]))
+            head.components.set(HoverEffectComponent())
             pinRoot.addChild(head)
 
             // Position on globe surface and orient outward
