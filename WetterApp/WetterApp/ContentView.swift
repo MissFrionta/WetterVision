@@ -73,18 +73,18 @@ struct ContentView: View {
         } attachments: {
             ForEach(cities) { city in
                 Attachment(id: "label-\(city.name)") {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(Color(city.pinColor))
-                            .frame(width: 10, height: 10)
-                        Text(city.name)
-                            .font(.system(size: 13, weight: .semibold))
+                    Button {
+                        selectCity(named: city.name)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color(city.pinColor))
+                                .frame(width: 10, height: 10)
+                            Text(city.name)
+                                .font(.system(size: 13, weight: .semibold))
+                        }
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(10)
-                    .hoverEffect(.highlight)
+                    .buttonBorderShape(.roundedRectangle(radius: 10))
                 }
             }
 
