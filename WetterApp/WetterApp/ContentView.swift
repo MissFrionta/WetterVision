@@ -1,6 +1,5 @@
 import SwiftUI
 import RealityKit
-import UIKit
 
 struct ContentView: View {
 
@@ -92,7 +91,6 @@ struct ContentView: View {
                 Attachment(id: "weather-panel") {
                     WeatherPanelView(city: city)
                 }
-
             }
         }
         // Drag gesture — rotates whichever entity is dragged
@@ -130,9 +128,6 @@ struct ContentView: View {
                     if tappedName.hasPrefix("marker-") {
                         let cityName = String(tappedName.dropFirst("marker-".count))
                         selectCity(named: cityName)
-                    } else if isCloseButton(value.entity) {
-                        // Tap on close button — close snow globe
-                        selectedCity = nil
                     } else {
                         // Check if a label attachment was tapped (walk up hierarchy to find city name)
                         let cityMatch = cities.first { city in
@@ -145,8 +140,10 @@ struct ContentView: View {
                         }
                         if let city = cityMatch {
                             selectCity(named: city.name)
+                        } else {
+                            // Tap on globe itself — deselect city
+                            selectedCity = nil
                         }
-                        // Tap on globe surface does nothing — globe stays in place
                     }
                 }
         )
@@ -183,16 +180,6 @@ struct ContentView: View {
         snowGlobeScale = 0.85
         snowGlobePinchStart = 0.85
         selectedCity = cities.first { $0.name == cityName }
-    }
-
-    /// Check if the tapped entity is the close button (by walking up the hierarchy).
-    private func isCloseButton(_ entity: Entity) -> Bool {
-        var current: Entity? = entity
-        while let e = current {
-            if e.name == "close-snowglobe" { return true }
-            current = e.parent
-        }
-        return false
     }
 
     /// Check if the dragged entity belongs to the snow globe (by walking up the hierarchy).
@@ -245,17 +232,6 @@ struct ContentView: View {
                 panel.components.set(BillboardComponent())
                 newGlobe.addChild(panel)
             }
-
-            // Close button (pure RealityKit entity — no SwiftUI attachment)
-            let closeMesh = MeshResource.generateSphere(radius: 0.012)
-            let closeMat = SimpleMaterial(color: UIColor(red: 0.85, green: 0.2, blue: 0.2, alpha: 1), isMetallic: false)
-            let closeBtn = ModelEntity(mesh: closeMesh, materials: [closeMat])
-            closeBtn.name = "close-snowglobe"
-            closeBtn.position = SIMD3<Float>(0.10, 0.14, 0.08)
-            closeBtn.components.set(InputTargetComponent(allowedInputTypes: .indirect))
-            closeBtn.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.018)]))
-            closeBtn.components.set(HoverEffectComponent())
-            newGlobe.addChild(closeBtn)
         } else {
             removeSnowGlobe()
         }
