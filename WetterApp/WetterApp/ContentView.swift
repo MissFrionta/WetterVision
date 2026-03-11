@@ -141,10 +141,8 @@ struct ContentView: View {
                         }
                         if let city = cityMatch {
                             selectCity(named: city.name)
-                        } else {
-                            // Tap on globe itself — deselect city
-                            selectedCity = nil
                         }
+                        // Tap on globe surface does nothing — globe stays in place
                     }
                 }
         )
