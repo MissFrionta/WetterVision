@@ -81,8 +81,13 @@ struct ContentView: View {
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
-                    .background(.ultraThinMaterial)
+                    .background(.thinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(city.pinColor).opacity(0.6), lineWidth: 1.5)
+                    )
                     .cornerRadius(8)
+                    .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
                 }
             }
 
