@@ -111,7 +111,8 @@ struct ContentView: View {
                     let pitch = simd_quatf(angle: vAngle, axis: SIMD3(1, 0, 0))
 
                     if isDragOnSnowGlobe(value.entity) {
-                        snowGlobeRotation = yaw * pitch * snowGlobeDragStart
+                        // Snow globe: only yaw (Y-axis) — stays upright like on a table
+                        snowGlobeRotation = yaw * snowGlobeDragStart
                     } else {
                         globeRotation = yaw * pitch * globeDragStart
                     }
