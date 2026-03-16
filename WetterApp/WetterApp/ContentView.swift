@@ -61,14 +61,16 @@ struct ContentView: View {
                 globe.scale = SIMD3<Float>(repeating: globeScale)
             }
 
-            // Apply snow globe rotation + scale
-            if let sg = snowGlobeEntity {
-                sg.orientation = snowGlobeRotation
-                sg.scale = SIMD3<Float>(repeating: snowGlobeScale)
-            }
-
             // Show/hide snow globe
             updateSnowGlobe(content: content, attachments: attachments)
+
+            // Apply snow globe rotation + scale (search scene graph, don't rely on @State ref)
+            if let root = globeEntity?.parent {
+                if let sg = root.children.first(where: { $0.name.hasPrefix("snowglobe-") }) {
+                    sg.orientation = snowGlobeRotation
+                    sg.scale = SIMD3<Float>(repeating: snowGlobeScale)
+                }
+            }
         } attachments: {
             ForEach(cities) { city in
                 Attachment(id: "label-\(city.name)") {
