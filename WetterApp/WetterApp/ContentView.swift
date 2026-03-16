@@ -211,7 +211,6 @@ struct ContentView: View {
     /// Find and remove any snow globe entities from the scene by name.
     private func removeSnowGlobe(root: Entity?) {
         guard let root = root else { return }
-        // Find all snow globe entities by name prefix (don't rely on @State reference)
         let snowGlobes = root.children.filter { $0.name.hasPrefix("snowglobe-") }
         for sg in snowGlobes {
             sg.isEnabled = false
@@ -244,11 +243,11 @@ struct ContentView: View {
             root?.addChild(newGlobe)
             snowGlobeEntity = newGlobe
 
-            // Attach weather panel
+            // Attach weather panel to scene root (not snow globe, so it doesn't rotate with it)
             if let panel = attachments.entity(for: "weather-panel") {
-                panel.position = SIMD3<Float>(0, -0.22, 0.18)
+                panel.position = SIMD3<Float>(0.20, -0.22, 0.18)
                 panel.components.set(BillboardComponent())
-                newGlobe.addChild(panel)
+                root?.addChild(panel)
             }
         } else {
             removeSnowGlobe(root: root)
