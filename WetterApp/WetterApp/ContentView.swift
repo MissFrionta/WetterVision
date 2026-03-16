@@ -73,17 +73,17 @@ struct ContentView: View {
         } attachments: {
             ForEach(cities) { city in
                 Attachment(id: "label-\(city.name)") {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 4) {
                         Circle()
                             .fill(Color(city.pinColor))
-                            .frame(width: 10, height: 10)
+                            .frame(width: 8, height: 8)
                         Text(city.name)
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(.regularMaterial)
-                    .cornerRadius(10)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(8)
                 }
             }
 
