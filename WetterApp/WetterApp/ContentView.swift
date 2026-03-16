@@ -197,10 +197,10 @@ struct ContentView: View {
 
     private func removeSnowGlobe() {
         if let existing = snowGlobeEntity {
-            // Recursively remove all children first to free memory
+            snowGlobeEntity = nil
+            existing.isEnabled = false
             existing.children.forEach { $0.removeFromParent() }
             existing.removeFromParent()
-            snowGlobeEntity = nil
         }
     }
 
