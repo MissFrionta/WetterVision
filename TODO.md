@@ -1,6 +1,6 @@
 # WetterApp — TODO-Liste
 
-Stand: 2026-03-11
+Stand: 2026-03-16
 
 ---
 
@@ -12,7 +12,7 @@ Stand: 2026-03-11
 - [x] Inhalte innerhalb des definierten 3D-Bereichs
 
 ### Anforderung 2: Kanonische Manipulationen (mind. 2 von 4)
-- [x] **Selektieren** — SpatialTapGesture auf Stadt-Pins waehlt Stadt aus und oeffnet Schneekugel
+- [x] **Selektieren** — SpatialTapGesture auf Stadt-Labels/Pins waehlt Stadt aus und oeffnet Schneekugel
 - [x] **Rotieren** — DragGesture dreht Globus und Schneekugel unabhaengig
 - [x] **Skalieren** — MagnifyGesture vergroessert/verkleinert Globus (0.5x-2.0x) und Schneekugel (0.4x-1.5x)
 - [ ] Positionieren — nicht implementiert (nicht erforderlich)
@@ -21,19 +21,19 @@ Stand: 2026-03-11
 - [x] Gesten: SpatialTapGesture, DragGesture, MagnifyGesture
 - [x] SwiftUI-Elemente: Stadt-Labels als Attachment mit BillboardComponent
 - [x] Wetter-Info-Panel als glassmorphes SwiftUI-Overlay (.ultraThinMaterial)
-- [ ] Bedienbarkeit verbessern: Pins sind noch schwer zu treffen (Collision vergroessert auf 4cm, aber ggf. noch zu klein)
+- [x] HoverEffect auf Stadt-Labels (HoverEffectComponent auf Entity)
 
 ### Anforderung 4: Informative und aesthetische 3D-Darstellung
-- [x] 4 stadtspezifische Voxel-Szenen (Berlin, New York, Tokio, Paris) — London entfernt (zu nah an Berlin/Paris)
+- [x] 3 stadtspezifische Voxel-Szenen (Berlin, New York, Tokio)
 - [x] Wettereffekte: Sonne, Wolken, Regen, Schnee, Gewitter
 - [x] Voxel-Art-Stil (prozedural, keine externen Assets)
 - [x] Farbpalette konsistent in VoxelBuilder.Palette
-- [ ] **Regenpartikel nicht sichtbar** — Regen wird in der Schneekugel nicht mehr angezeigt, muss debuggt werden
-- [ ] **Voxelstaedte verschoenern** — Aktuelle Szenen sind funktional, aber koennten aesthetisch verbessert werden
-- [ ] Performance: Lag/Crash nach mehreren Interaktionen — Entity-Anzahl reduziert (~40%), muss nochmal getestet werden
+- [x] Performance-Optimierung: Mesh-Merging via VoxelCollector (~700 Entities → ~12 pro Schneekugel)
+- [ ] **Regenpartikel nicht sichtbar** — Regen wird in der Schneekugel nicht angezeigt, muss debuggt werden
+- [ ] **Voxelstaedte verschoenern** — Aktuelle Szenen sind funktional, koennten aesthetisch verbessert werden
 
 ### Anforderung 5: Dummy-Daten
-- [x] 4 Staedte mit Dummy-Wetterdaten in CityData.swift (Temperatur, Luftfeuchtigkeit, Wind, Zustand, Beschreibung)
+- [x] 3 Staedte mit Dummy-Wetterdaten in CityData.swift (Temperatur, Luftfeuchtigkeit, Wind, Zustand, Beschreibung)
 - [ ] Optional: Anbindung an echte Wetter-API (Open-Meteo oder DWD Open Data) — nur in neuem Branch
 
 ---
@@ -41,17 +41,16 @@ Stand: 2026-03-11
 ## Bekannte Bugs / Offene Probleme
 
 ### Hoch (muss fuer Abnahme gefixt sein)
-- [ ] **Performance/Crash bei Schneekugel** — App laggt sehr stark sobald eine Schneekugel angezeigt wird und stuerzt gelegentlich ab. Entity-Anzahl wurde bereits reduziert (~40%), reicht aber nicht. Mesh-Merging, Entity-Instancing oder weitere Reduktion evaluieren
-- [ ] **Stadt-Labels nicht hervorgehoben** — Labels werden beim Anschauen (Eye-Tracking) nicht visuell hervorgehoben, obwohl HoverEffectComponent gesetzt ist. Selektieren einer Stadt dadurch sehr schwer — User weiss nicht, ob Label fokussiert ist
-- [ ] **Regenpartikel nicht sichtbar** — Regen-Effekt wird in der Schneekugel nicht mehr angezeigt, muss debuggt werden
+- [ ] **Schneekugel schliessen** — Tap auf Globus-Oberflaeche deselektiert die Stadt, aber es gibt keinen expliziten Close-Button. Evtl. Close-Mechanismus verbessern
+- [ ] **Regenpartikel nicht sichtbar** — Regen-Effekt wird in der Schneekugel nicht angezeigt, muss debuggt werden
 
 ### Mittel (sollte gefixt werden)
 - [ ] **Voxelstaedte verschoenern** — Aktuelle Szenen sind funktional, koennten aber aesthetisch verbessert werden (mehr Details, bessere Proportionen)
-- [ ] **Wetter-Panel Positionierung** — UI-Element mit Wetterdaten koennte noch besser positioniert werden (aktuell unter der Schneekugel, evtl. seitlich oder als Ornament)
+- [ ] **Wetter-Panel Positionierung** — UI-Element mit Wetterdaten koennte noch besser positioniert werden
+- [ ] **Label-Taps unzuverlaessig** — Tap auf Stadt-Labels funktioniert nicht immer auf der echten AVP. Collision-Radius (0.025) ist klein, aber groessere Werte brechen Gesten (siehe CLAUDE.md)
 
 ### Niedrig (nice to have)
 - [ ] Animierte Uebergaenge beim Schneekugel-Wechsel (Fade-In/Out)
-- [x] Tap auf Globus deselektiert Stadt — funktioniert
 
 ---
 
@@ -66,16 +65,33 @@ Stand: 2026-03-11
 
 ---
 
+## KRITISCH: visionOS Gesten-Regeln (auf echter AVP bestaetigt)
+
+Siehe CLAUDE.md fuer die vollstaendige Dokumentation. Kurzfassung:
+
+**Diese Werte NICHT aendern ohne Test auf der echten Apple Vision Pro:**
+- Globe Collision: 0.108 (= globeRadius). NICHT groesser machen!
+- Label Collision: 0.025. NICHT groesser machen!
+- Label Font: 11. Labels NICHT vergroessern!
+- Label Background: .ultraThinMaterial. NICHT .regularMaterial verwenden!
+- KEIN .hoverEffect(.highlight) auf SwiftUI-Attachment-Views!
+- KEINE SwiftUI Buttons in Attachments!
+
+**Warum:** Groessere Collision-Spheres/Labels verursachen Overlap zwischen Label- und Globus-Collision.
+Continuous Gestures (Drag/Magnify) die auf ein SwiftUI-Attachment treffen werden von SwiftUI
+verschluckt und erreichen nie den RealityView-Gesture-Handler. Nur der SpatialTapGesture
+(diskret) funktioniert zuverlaessig auf Attachments.
+
+Referenz-Commit mit funktionierenden Gesten: **f4937e1**
+
+---
+
 ## Dokumentation
 
 - [x] Projektdokumentation vorhanden (WetterApp/Dokumentation.md)
-- [ ] **Dokumentation aktualisieren** — Aktuelle Doku beschreibt den Stand korrekt, aber folgende Aenderungen muessen nachgetragen werden:
-  - SpatialTapGesture statt TapGesture
-  - HoverEffectComponent auf interaktiven Entities
-  - CollisionComponent statt generateCollisionShapes
-  - Performance-Optimierungen (reduzierte Entity-Anzahl)
-  - Emitter-Anpassungen fuer Partikel in der Schneekugel
-- [ ] **Alte DOKUMENTATION.md im Root entfernen oder archivieren** — beschreibt die alte Diorama-Architektur, die nicht mehr existiert
+- [x] CLAUDE.md (Entwicklungshinweise fuer Claude Code, inkl. Gesten-Regeln)
+- [x] TUTORIAL.md (Setup-Anleitung)
+- [ ] **TUTORIAL.md aktualisieren** — Beschreibt noch die alte Diorama-Architektur (WetterVision v1), muss auf WetterApp-Projekt aktualisiert werden
 - [ ] Kurze schriftliche Doku fuer Abgabe (gerne stichpunktartig laut Aufgabenstellung)
 
 ---
@@ -101,7 +117,14 @@ Stand: 2026-03-11
 - [x] Tappbare SwiftUI-Labels als Attachments ueber den Pins
 - [x] Pin-Positionierung iteriert (globeRadius, lonOffset)
 - [x] London entfernt (zu nah an Berlin/Paris auf kleinem Globus)
-- [x] Collision-Radius von Pin-Radius getrennt (globeCollisionRadius vs globeRadius)
-- [x] Label-Name gesetzt (attachment.name) — Fix fuer Stadt-Selektion
-- [x] Globe bleibt links wenn Schneekugel sichtbar (snowGlobeEntity-Check)
 - [x] simultaneousGesture fuer alle Gesten (Drag ohne vorheriges Tappen)
+- [x] **Performance: Mesh-Merging via VoxelCollector** — ~700 einzelne Entities pro Schneekugel auf ~12 reduziert
+- [x] WeatherEffects auf VoxelCollector umgestellt (Wolken, Sonne, Blitz)
+- [x] Partikel-Raten reduziert: Regen 200->150, Schnee 80->50
+
+### Session 2026-03-16
+- [x] Gesten-Bug analysiert und gefixt: Revert auf f4937e1 (ContentView + GlobeBuilder)
+- [x] Paris entfernt (zu nah an Berlin auf dem kleinen Globus)
+- [x] CLAUDE.md komplett ueberarbeitet mit detaillierten Gesten-Regeln
+- [x] TODO.md aktualisiert
+- [x] Ursache dokumentiert: Label-Collision-Overlap + SwiftUI-Attachment-Gesten-Interception
