@@ -45,6 +45,7 @@ Stand: 2026-03-16
 - [ ] **Regenpartikel nicht sichtbar** — Regen-Effekt wird in der Schneekugel nicht angezeigt, muss debuggt werden
 
 ### Mittel (sollte gefixt werden)
+- [ ] **Skalierungs-Begrenzung** — Globus und Schneekugel koennen sich beim Skalieren gegenseitig verdecken. Scale-Limits muessen so angepasst werden, dass beide nebeneinander sichtbar bleiben (abhaengig von Position und aktuellem Scale des jeweils anderen). Spaetestens fuer Abgabe wichtig!
 - [ ] **Voxelstaedte verschoenern** — Aktuelle Szenen sind funktional, koennten aber aesthetisch verbessert werden (mehr Details, bessere Proportionen)
 - [ ] **Wetter-Panel Positionierung** — UI-Element mit Wetterdaten koennte noch besser positioniert werden
 - [ ] **Label-Taps unzuverlaessig** — Tap auf Stadt-Labels funktioniert nicht immer auf der echten AVP. Collision-Radius (0.025) ist klein, aber groessere Werte brechen Gesten (siehe CLAUDE.md)
