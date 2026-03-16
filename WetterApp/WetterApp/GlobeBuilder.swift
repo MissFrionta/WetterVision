@@ -6,7 +6,7 @@ import UIKit
 struct GlobeBuilder {
 
     // Collision radius matching the visual Earth model at scale 1.1
-    static let globeCollisionRadius: Float = 0.155
+    static let globeCollisionRadius: Float = 0.108
     // Pin placement radius — adjust if pins float or sink
     static let globeRadius: Float = 0.108
     // Longitude offset to align pins with the Earth texture (shift west)
