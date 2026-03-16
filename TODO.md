@@ -12,8 +12,8 @@ Stand: 2026-03-16
 - [x] Inhalte innerhalb des definierten 3D-Bereichs
 
 ### Anforderung 2: Kanonische Manipulationen (mind. 2 von 4)
-- [x] **Selektieren** — SpatialTapGesture auf Stadt-Labels/Pins waehlt Stadt aus und oeffnet Schneekugel
-- [x] **Rotieren** — DragGesture dreht Globus und Schneekugel unabhaengig
+- [x] **Selektieren** — SpatialTapGesture auf Stadt-Labels waehlt Stadt aus und oeffnet Schneekugel
+- [x] **Rotieren** — DragGesture dreht Globus (Yaw+Pitch) und Schneekugel (nur Yaw, bleibt aufrecht)
 - [x] **Skalieren** — MagnifyGesture vergroessert/verkleinert Globus (0.5x-2.0x) und Schneekugel (0.4x-1.5x)
 - [ ] Positionieren — nicht implementiert (nicht erforderlich)
 
@@ -21,7 +21,8 @@ Stand: 2026-03-16
 - [x] Gesten: SpatialTapGesture, DragGesture, MagnifyGesture
 - [x] SwiftUI-Elemente: Stadt-Labels als Attachment mit BillboardComponent
 - [x] Wetter-Info-Panel als glassmorphes SwiftUI-Overlay (.ultraThinMaterial)
-- [x] HoverEffect auf Stadt-Labels (HoverEffectComponent auf Entity)
+- [x] HoverEffect auf Stadt-Labels (HoverEffectComponent mit strength 1.0)
+- [x] Labels mit farbigem Rand (Pin-Farbe), .thinMaterial, Schatten
 
 ### Anforderung 4: Informative und aesthetische 3D-Darstellung
 - [x] 3 stadtspezifische Voxel-Szenen (Berlin, New York, Tokio)
@@ -41,7 +42,6 @@ Stand: 2026-03-16
 ## Bekannte Bugs / Offene Probleme
 
 ### Hoch (muss fuer Abnahme gefixt sein)
-- [ ] **Schneekugel schliessen** — Tap auf Globus-Oberflaeche deselektiert die Stadt, aber es gibt keinen expliziten Close-Button. Evtl. Close-Mechanismus verbessern
 - [ ] **Regenpartikel nicht sichtbar** — Regen-Effekt wird in der Schneekugel nicht angezeigt, muss debuggt werden
 
 ### Mittel (sollte gefixt werden)
@@ -74,14 +74,13 @@ Siehe CLAUDE.md fuer die vollstaendige Dokumentation. Kurzfassung:
 - Globe Collision: 0.108 (= globeRadius). NICHT groesser machen!
 - Label Collision: 0.025. NICHT groesser machen!
 - Label Font: 11. Labels NICHT vergroessern!
-- Label Background: .ultraThinMaterial. NICHT .regularMaterial verwenden!
+- Label Background: .thinMaterial (nicht .regularMaterial!)
 - KEIN .hoverEffect(.highlight) auf SwiftUI-Attachment-Views!
 - KEINE SwiftUI Buttons in Attachments!
 
-**Warum:** Groessere Collision-Spheres/Labels verursachen Overlap zwischen Label- und Globus-Collision.
-Continuous Gestures (Drag/Magnify) die auf ein SwiftUI-Attachment treffen werden von SwiftUI
-verschluckt und erreichen nie den RealityView-Gesture-Handler. Nur der SpatialTapGesture
-(diskret) funktioniert zuverlaessig auf Attachments.
+**@State in RealityView update closure ist UNZUVERLAESSIG!**
+Entity-Referenzen immer per Scene-Graph-Suche (name prefix) statt @State.
+Siehe CLAUDE.md fuer Details.
 
 Referenz-Commit mit funktionierenden Gesten: **f4937e1**
 
@@ -90,7 +89,7 @@ Referenz-Commit mit funktionierenden Gesten: **f4937e1**
 ## Dokumentation
 
 - [x] Projektdokumentation vorhanden (WetterApp/Dokumentation.md)
-- [x] CLAUDE.md (Entwicklungshinweise fuer Claude Code, inkl. Gesten-Regeln)
+- [x] CLAUDE.md (Entwicklungshinweise fuer Claude Code, inkl. Gesten-Regeln + @State-Pitfall)
 - [x] TUTORIAL.md (Setup-Anleitung)
 - [ ] **TUTORIAL.md aktualisieren** — Beschreibt noch die alte Diorama-Architektur (WetterVision v1), muss auf WetterApp-Projekt aktualisiert werden
 - [ ] Kurze schriftliche Doku fuer Abgabe (gerne stichpunktartig laut Aufgabenstellung)
@@ -126,6 +125,13 @@ Referenz-Commit mit funktionierenden Gesten: **f4937e1**
 ### Session 2026-03-16
 - [x] Gesten-Bug analysiert und gefixt: Revert auf f4937e1 (ContentView + GlobeBuilder)
 - [x] Paris entfernt (zu nah an Berlin auf dem kleinen Globus)
-- [x] CLAUDE.md komplett ueberarbeitet mit detaillierten Gesten-Regeln
-- [x] TODO.md aktualisiert
+- [x] Stadt-Selektion gefixt: attachment.name fuer Tap-Erkennung
+- [x] Schneekugel-Entfernung gefixt: Scene-Graph-Suche statt @State-Referenz
+- [x] Schneekugel verschwindet nicht mehr bei Tap (isDragOnSnowGlobe-Check im Tap-Handler)
+- [x] Schneekugel Rotation/Skalierung funktioniert (Scene-Graph-Suche fuer Transform-Anwendung)
+- [x] Schneekugel-Rotation auf Y-Achse beschraenkt (bleibt aufrecht wie echte Schneekugel)
+- [x] Weather-Panel bleibt fix vor Schneekugel (an scene-root statt snow globe gehaengt)
+- [x] Label-Sichtbarkeit verbessert: farbiger Rand, .thinMaterial, Schatten
+- [x] HoverEffect-Staerke auf Maximum (strength 1.0, weiss)
+- [x] CLAUDE.md + TODO.md komplett aktualisiert inkl. @State-Pitfall-Dokumentation
 - [x] Ursache dokumentiert: Label-Collision-Overlap + SwiftUI-Attachment-Gesten-Interception

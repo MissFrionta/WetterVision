@@ -34,18 +34,20 @@ SwiftUI + RealityKit. No external dependencies — only Apple frameworks (SwiftU
 ### Data flow
 
 - `ContentView` owns all state as `@State` variables (no ViewModel)
-- City selection: Tap on label/marker → `selectCity(named:)` → `selectedCity` changes → `update` closure runs → `updateSnowGlobe()` builds/swaps snow globe
+- City selection: Tap on label → `selectCity(named:)` → `selectedCity` changes → `update` closure runs → `updateSnowGlobe()` builds/swaps snow globe
 - Gestures: `.simultaneousGesture()` on RealityView → updates `@State` rotation/scale → `update` closure applies transforms
-- Entity identification: `isDragOnSnowGlobe()` traverses entity hierarchy by name
+- Entity lookup: Scene graph search by name prefix (`snowglobe-*`) — NOT @State entity references (see pitfall below)
 - Tap on globe surface deselects the current city
+- Tap on snow globe is ignored (allows drag/pinch without interference)
 
 ### Scene construction
 
 - **Globe:** Earth.usdz loaded via `Entity(named: "Earth", in: realityKitContentBundle)` at scale 1.1
 - **Pins:** Stecknadel-style — white cylinder stick + colored sphere head, positioned via lat/lon → spherical coordinates
-- **Labels:** SwiftUI Attachments with BillboardComponent + HoverEffectComponent (on Entity), plain HStack views (no .hoverEffect modifier on SwiftUI side!)
-- **Snow globes:** `VoxelBuilder.buildSnowGlobe(for:)` — procedural voxel scenes with glass sphere, city landmarks, and weather effects. Uses mesh merging (~12 entities instead of ~700)
-- **Weather:** `WeatherEffects.apply(condition:to:)` adds sun/clouds/rain/snow/lightning
+- **Labels:** SwiftUI Attachments with BillboardComponent + HoverEffectComponent(.highlight, strength 1.0), plain HStack views with colored border and .thinMaterial
+- **Snow globes:** `VoxelBuilder.buildSnowGlobe(for:)` — procedural voxel scenes with glass sphere, city landmarks, and weather effects. Uses mesh merging (~12 entities instead of ~700). Rotation restricted to Y-axis only (stays upright)
+- **Weather panel:** SwiftUI Attachment on scene-root (NOT snow globe child), stays fixed in front of snow globe during rotation
+- **Weather effects:** `WeatherEffects.apply(condition:to:)` adds sun/clouds/rain/snow/lightning
 
 ### Important constants (GlobeBuilder)
 
@@ -60,11 +62,29 @@ SwiftUI + RealityKit. No external dependencies — only Apple frameworks (SwiftU
 
 - **Colors:** Defined in `VoxelBuilder.Palette` as static `UIColor` properties
 - **Collision:** Explicit `CollisionComponent` on all interactive entities (no `generateCollisionShapes`)
-- **Hover:** `HoverEffectComponent` on RealityKit entities for gaze highlight. Do NOT use `.hoverEffect(.highlight)` on the SwiftUI attachment views (see gesture rules below)
+- **Hover:** `HoverEffectComponent(.highlight(.init(color: .white, strength: 1.0)))` on label entities for strong gaze highlight. Do NOT use `.hoverEffect(.highlight)` on the SwiftUI attachment views
 - **Input:** `InputTargetComponent(allowedInputTypes: .indirect)` for eye+hand interaction
 - **Gestures:** All registered as `.simultaneousGesture()` on RealityView
 - **Particles:** Rain and snow use `ParticleEmitterComponent` directly; `mainEmitter.birthRate` for rate, `speed` (top-level) for velocity
 - **Language:** UI text is in German. Code (variable names, comments) is in English.
+
+## CRITICAL: @State in RealityView update closure
+
+**@State writes inside the RealityView `update` closure are UNRELIABLE.** Values set there
+(e.g., `snowGlobeEntity = newGlobe`) may not persist to the next update cycle. This caused
+multiple bugs where entity references were lost.
+
+**Rule:** ALWAYS find entities by searching the scene graph by name instead of relying on
+@State entity references. Example:
+```swift
+// GOOD — search scene graph
+if let sg = root.children.first(where: { $0.name.hasPrefix("snowglobe-") }) { ... }
+
+// BAD — @State reference may be nil
+if let sg = snowGlobeEntity { ... }
+```
+
+`globeEntity` is the one exception — it's set in the `make` closure (not `update`) and persists reliably.
 
 ## CRITICAL: visionOS gesture rules — DO NOT CHANGE without device testing
 
@@ -92,7 +112,7 @@ These modifiers on the SwiftUI content inside Attachments break continuous gestu
 - `Button` / `.onTapGesture` — actively consumes all gesture events
 - `.clipShape()` with complex shapes — can interfere with gesture passthrough
 
-Safe modifiers: `.background(.ultraThinMaterial)`, `.cornerRadius()`, `.font()`, `.padding()`
+Safe modifiers: `.background(.thinMaterial)`, `.cornerRadius()`, `.font()`, `.padding()`, `.overlay()`, `.shadow()`
 
 Use `HoverEffectComponent()` on the Entity instead (set in the make closure, not on the SwiftUI view).
 
@@ -108,8 +128,10 @@ Larger labels (font 14, padding 12/8, .regularMaterial) were tested and broke ge
 with small collision spheres. The working label style is:
 - Font: `.system(size: 11, weight: .semibold)`
 - Padding: `.horizontal(8)`, `.vertical(5)`
-- Background: `.ultraThinMaterial`
+- Background: `.thinMaterial`
 - Corner radius: 8
+- Border: `.overlay(RoundedRectangle.stroke(pinColor, 1.5))` — safe
+- Shadow: `.shadow(color:radius:y:)` — safe
 
 ### Summary of gesture-safe values
 
@@ -119,7 +141,7 @@ Label collision radius:  0.025
 Label position offset:   0.015 above stick top
 Label font size:         11
 Label padding:           8 horizontal, 5 vertical
-Label background:        .ultraThinMaterial
+Label background:        .thinMaterial
 SwiftUI .hoverEffect:    NO (use HoverEffectComponent on Entity instead)
 SwiftUI Button:          NO (use SpatialTapGesture handler)
 ```
