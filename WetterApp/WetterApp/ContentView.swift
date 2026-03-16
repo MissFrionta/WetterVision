@@ -58,7 +58,7 @@ struct ContentView: View {
             if let globe = globeEntity {
                 globe.orientation = globeRotation
                 let hasSnowGlobe = selectedCity != nil || snowGlobeEntity != nil
-                globe.position.x = hasSnowGlobe ? -0.20 : 0.0
+                globe.position.x = hasSnowGlobe ? -0.20 : 0.05
                 globe.scale = SIMD3<Float>(repeating: globeScale)
             }
 
