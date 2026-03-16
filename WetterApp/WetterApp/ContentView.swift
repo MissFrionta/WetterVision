@@ -195,34 +195,40 @@ struct ContentView: View {
 
     // MARK: - Snow Globe Management
 
-    private func removeSnowGlobe() {
-        if let existing = snowGlobeEntity {
-            snowGlobeEntity = nil
-            existing.isEnabled = false
-            existing.children.forEach { $0.removeFromParent() }
-            existing.removeFromParent()
+    /// Find and remove any snow globe entities from the scene by name.
+    private func removeSnowGlobe(root: Entity?) {
+        guard let root = root else { return }
+        // Find all snow globe entities by name prefix (don't rely on @State reference)
+        let snowGlobes = root.children.filter { $0.name.hasPrefix("snowglobe-") }
+        for sg in snowGlobes {
+            sg.isEnabled = false
+            sg.children.forEach { $0.removeFromParent() }
+            sg.removeFromParent()
         }
+        snowGlobeEntity = nil
     }
 
     private func updateSnowGlobe(content: RealityViewContent, attachments: RealityViewAttachments) {
+        let root = globeEntity?.parent
+
         if let city = selectedCity {
-            // Only rebuild if city actually changed
             let targetName = "snowglobe-\(city.name)"
-            if let existing = snowGlobeEntity {
-                if existing.name == targetName {
-                    return // Same city, nothing to do
-                }
-                removeSnowGlobe()
+
+            // Check if correct snow globe already exists (by searching scene graph)
+            if let existing = root?.children.first(where: { $0.name == targetName }) {
+                snowGlobeEntity = existing
+                return // Same city, nothing to do
             }
+
+            // Remove any existing snow globe
+            removeSnowGlobe(root: root)
 
             // Create new snow globe
             let newGlobe = VoxelBuilder.buildSnowGlobe(for: city.name)
             newGlobe.position = SIMD3<Float>(0.20, 0.0, 0.0)
             newGlobe.scale = SIMD3<Float>(repeating: snowGlobeScale)
 
-            if let root = globeEntity?.parent {
-                root.addChild(newGlobe)
-            }
+            root?.addChild(newGlobe)
             snowGlobeEntity = newGlobe
 
             // Attach weather panel
@@ -232,7 +238,7 @@ struct ContentView: View {
                 newGlobe.addChild(panel)
             }
         } else {
-            removeSnowGlobe()
+            removeSnowGlobe(root: root)
         }
     }
 }
