@@ -37,11 +37,10 @@ struct ContentView: View {
             // City labels (tappable, floating above markers)
             for city in cities {
                 if let attachment = attachments.entity(for: "label-\(city.name)") {
-                    attachment.name = "label-\(city.name)"
                     let labelPos = GlobeBuilder.latLonToPosition(
                         lat: city.latitude,
                         lon: city.longitude + GlobeBuilder.lonOffset,
-                        radius: GlobeBuilder.globeRadius + GlobeBuilder.stickHeight + 0.018
+                        radius: GlobeBuilder.globeRadius + GlobeBuilder.stickHeight + 0.015
                     )
                     attachment.position = labelPos
                     attachment.components.set(BillboardComponent())
@@ -57,8 +56,7 @@ struct ContentView: View {
             // Apply globe rotation + position + scale
             if let globe = globeEntity {
                 globe.orientation = globeRotation
-                let hasSnowGlobe = selectedCity != nil || snowGlobeEntity != nil
-                globe.position.x = hasSnowGlobe ? -0.20 : 0.05
+                globe.position.x = selectedCity != nil ? -0.20 : 0.0
                 globe.scale = SIMD3<Float>(repeating: globeScale)
             }
 
@@ -140,8 +138,10 @@ struct ContentView: View {
                         }
                         if let city = cityMatch {
                             selectCity(named: city.name)
+                        } else {
+                            // Tap on globe itself — deselect city
+                            selectedCity = nil
                         }
-                        // Tap on globe surface does nothing — globe stays in place
                     }
                 }
         )
