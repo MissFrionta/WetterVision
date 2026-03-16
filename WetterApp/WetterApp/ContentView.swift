@@ -127,6 +127,11 @@ struct ContentView: View {
             SpatialTapGesture()
                 .targetedToAnyEntity()
                 .onEnded { value in
+                    // Ignore taps on the snow globe (allows drag/pinch without interference)
+                    if isDragOnSnowGlobe(value.entity) {
+                        return
+                    }
+
                     let tappedName = value.entity.name
                     // Check for marker tap
                     if tappedName.hasPrefix("marker-") {
@@ -145,7 +150,7 @@ struct ContentView: View {
                         if let city = cityMatch {
                             selectCity(named: city.name)
                         } else {
-                            // Tap on globe itself — deselect city
+                            // Tap on globe surface — deselect city
                             selectedCity = nil
                         }
                     }
