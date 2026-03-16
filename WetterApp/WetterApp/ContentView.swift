@@ -84,7 +84,6 @@ struct ContentView: View {
                     .padding(.vertical, 8)
                     .background(.regularMaterial)
                     .cornerRadius(10)
-                    .hoverEffect(.highlight)
                 }
             }
 
