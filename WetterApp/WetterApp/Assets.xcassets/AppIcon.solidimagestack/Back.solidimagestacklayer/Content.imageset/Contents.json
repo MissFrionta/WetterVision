@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "icon_layer.png",
       "idiom" : "vision",
       "scale" : "2x"
     }
