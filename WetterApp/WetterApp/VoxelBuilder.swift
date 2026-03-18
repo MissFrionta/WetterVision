@@ -215,8 +215,9 @@ struct VoxelBuilder {
         root.addChild(scene)
 
         // Weather effects based on dummy data
+        let voxelSize: Float = cityName == "Tokio" ? 0.005 : 0.010
         if let weather = CityData.dummyWeather[cityName] {
-            WeatherEffects.apply(condition: weather.condition, to: root)
+            WeatherEffects.apply(condition: weather.condition, to: root, voxelSize: voxelSize)
         }
 
         // Glass sphere
@@ -410,12 +411,12 @@ struct VoxelBuilder {
             }
         }
 
-        // Arched bridge over pond
-        buildBridge(collector: c, gx: 6, gz: 10, length: 10)
+        // Wooden pier into the pond
+        buildPier(collector: c, gx: 6, gz: 4, length: 8)
 
-        // Stone lanterns flanking the path
-        buildStoneLantern(collector: c, gx: 2, gz: -8)
-        buildStoneLantern(collector: c, gx: 10, gz: -8)
+        // Stone lanterns flanking the torii gate
+        buildStoneLantern(collector: c, gx: 0, gz: -14)
+        buildStoneLantern(collector: c, gx: 12, gz: -14)
 
         // Stone stepping path from torii to pagoda
         let pathStones: [(Int, Int)] = [
@@ -480,24 +481,29 @@ struct VoxelBuilder {
         c.add(color: Palette.stone, x: gx, y: 11, z: gz)
     }
 
-    private static func buildBridge(collector c: VoxelCollector, gx: Int, gz: Int, length: Int) {
-        // Gentle parabolic arch — max step of 1 so no gaps
-        let mid = Float(length) / 2.0
+    private static func buildPier(collector c: VoxelCollector, gx: Int, gz: Int, length: Int) {
+        let woodColor = UIColor(red: 0.55, green: 0.38, blue: 0.22, alpha: 1)
+        let woodDark = UIColor(red: 0.45, green: 0.30, blue: 0.18, alpha: 1)
+
         for i in 0..<length {
-            let dx = i - length / 2
-            let t = abs(Float(i) - mid) / mid
-            let archY = 1 + Int(round(3.0 * (1.0 - t * t)))
-            // Bridge deck (3 wide)
-            c.add(color: Palette.pagodaRedDark, x: gx + dx, y: archY, z: gz)
-            c.add(color: Palette.pagodaRedDark, x: gx + dx, y: archY, z: gz + 1)
-            c.add(color: Palette.pagodaRedDark, x: gx + dx, y: archY, z: gz + 2)
-            // Railings at ends and middle
-            if i == 0 || i == length / 2 || i == length - 1 {
-                c.add(color: Palette.pagodaRed, x: gx + dx, y: archY + 1, z: gz)
-                c.add(color: Palette.pagodaRed, x: gx + dx, y: archY + 2, z: gz)
-                c.add(color: Palette.pagodaRed, x: gx + dx, y: archY + 1, z: gz + 2)
-                c.add(color: Palette.pagodaRed, x: gx + dx, y: archY + 2, z: gz + 2)
-            }
+            let dz = i
+            // Deck planks (3 wide, flat at y=1)
+            let color = i % 2 == 0 ? woodColor : woodDark
+            c.add(color: color, x: gx - 1, y: 1, z: gz + dz)
+            c.add(color: color, x: gx, y: 1, z: gz + dz)
+            c.add(color: color, x: gx + 1, y: 1, z: gz + dz)
+        }
+        // Support posts underneath
+        for postZ in stride(from: 0, to: length, by: 3) {
+            c.add(color: woodDark, x: gx - 1, y: 0, z: gz + postZ)
+            c.add(color: woodDark, x: gx + 1, y: 0, z: gz + postZ)
+            c.add(color: woodDark, x: gx - 1, y: -1, z: gz + postZ)
+            c.add(color: woodDark, x: gx + 1, y: -1, z: gz + postZ)
+        }
+        // Railing posts at start and end
+        for dy in 2...4 {
+            c.add(color: woodColor, x: gx - 1, y: dy, z: gz)
+            c.add(color: woodColor, x: gx + 1, y: dy, z: gz)
         }
     }
 

@@ -7,25 +7,25 @@ struct WeatherEffects {
     // MARK: - Public API
 
     /// Adds the appropriate weather effects to a snow globe scene entity.
-    static func apply(condition: WeatherCondition, to parent: Entity) {
+    static func apply(condition: WeatherCondition, to parent: Entity, voxelSize: Float = 0.010) {
         let effectsRoot = Entity()
         effectsRoot.name = "weather-effects"
 
         switch condition {
         case .sunny:
-            addSun(to: effectsRoot)
+            addSun(to: effectsRoot, voxelSize: voxelSize)
         case .cloudy:
-            addClouds(to: effectsRoot, dark: false)
+            addClouds(to: effectsRoot, dark: false, voxelSize: voxelSize)
         case .rainy:
-            addClouds(to: effectsRoot, dark: true)
+            addClouds(to: effectsRoot, dark: true, voxelSize: voxelSize)
             addRain(to: effectsRoot)
         case .snowy:
-            addClouds(to: effectsRoot, dark: false)
+            addClouds(to: effectsRoot, dark: false, voxelSize: voxelSize)
             addSnow(to: effectsRoot)
         case .stormy:
-            addClouds(to: effectsRoot, dark: true)
+            addClouds(to: effectsRoot, dark: true, voxelSize: voxelSize)
             addRain(to: effectsRoot)
-            addLightning(to: effectsRoot)
+            addLightning(to: effectsRoot, voxelSize: voxelSize)
         }
 
         parent.addChild(effectsRoot)
@@ -33,21 +33,21 @@ struct WeatherEffects {
 
     // MARK: - Sun (merged voxels)
 
-    private static func addSun(to parent: Entity) {
+    private static func addSun(to parent: Entity, voxelSize: Float = 0.010) {
         let sunColor = UIColor(red: 0.98, green: 0.85, blue: 0.25, alpha: 1)
         let sunBright = UIColor(red: 1.0, green: 0.95, blue: 0.50, alpha: 1)
 
         let sunRoot = Entity()
         sunRoot.name = "sun"
-        sunRoot.position = SIMD3<Float>(0.03, 0.07, 0.0)
+        sunRoot.position = SIMD3<Float>(0.04, 0.12, 0.0)
 
-        let c = VoxelBuilder.VoxelCollector()
+        let c = VoxelBuilder.VoxelCollector(blockSize: voxelSize)
 
         // Core (3x3)
         for dx in -1...1 {
             for dy in -1...1 {
                 let color = (abs(dx) + abs(dy)) == 0 ? sunBright : sunColor
-                c.addAt(color: color, position: SIMD3(Float(dx) * 0.010, Float(dy) * 0.010, 0))
+                c.addAt(color: color, position: SIMD3(Float(dx) * voxelSize, Float(dy) * voxelSize, 0))
             }
         }
 
@@ -58,7 +58,7 @@ struct WeatherEffects {
             (0, 3), (0, -3), (3, 0), (-3, 0),
         ]
         for (rx, ry) in rayPositions {
-            c.addAt(color: sunColor, position: SIMD3(Float(rx) * 0.010, Float(ry) * 0.010, 0))
+            c.addAt(color: sunColor, position: SIMD3(Float(rx) * voxelSize, Float(ry) * voxelSize, 0))
         }
 
         c.flush(into: sunRoot)
@@ -68,7 +68,7 @@ struct WeatherEffects {
 
     // MARK: - Clouds (merged voxels)
 
-    private static func addClouds(to parent: Entity, dark: Bool) {
+    private static func addClouds(to parent: Entity, dark: Bool, voxelSize: Float = 0.010) {
         let lightColor = dark
             ? UIColor(red: 0.55, green: 0.55, blue: 0.58, alpha: 1)
             : UIColor(red: 0.92, green: 0.93, blue: 0.95, alpha: 1)
@@ -76,14 +76,14 @@ struct WeatherEffects {
             ? UIColor(red: 0.42, green: 0.42, blue: 0.45, alpha: 1)
             : UIColor(red: 0.82, green: 0.84, blue: 0.88, alpha: 1)
 
-        // Merge all cloud voxels into one entity using absolute positions
+        // Cloud positions raised above tallest buildings
         let cloudPositions: [SIMD3<Float>] = [
-            SIMD3<Float>(-0.04, 0.06, 0.02),
-            SIMD3<Float>(0.03, 0.07, -0.02),
-            SIMD3<Float>(-0.01, 0.05, 0.04),
+            SIMD3<Float>(-0.02, 0.11, 0.02),
+            SIMD3<Float>(0.04, 0.12, -0.01),
+            SIMD3<Float>(0.01, 0.10, 0.04),
         ]
 
-        let c = VoxelBuilder.VoxelCollector()
+        let c = VoxelBuilder.VoxelCollector(blockSize: voxelSize)
 
         for (i, pos) in cloudPositions.enumerated() {
             let w = i == 1 ? 4 : 3
@@ -93,7 +93,7 @@ struct WeatherEffects {
                         if abs(dx) == w && (abs(dz) > 0 || dy > 0) { continue }
                         if dy == 1 && abs(dx) > w - 1 { continue }
                         let color = (dx + dz + dy) % 2 == 0 ? lightColor : darkColor
-                        let absolutePos = pos + SIMD3<Float>(Float(dx) * 0.010, Float(dy) * 0.010, Float(dz) * 0.010)
+                        let absolutePos = pos + SIMD3<Float>(Float(dx) * voxelSize, Float(dy) * voxelSize, Float(dz) * voxelSize)
                         c.addAt(color: color, position: absolutePos)
                     }
                 }
@@ -155,20 +155,21 @@ struct WeatherEffects {
 
     // MARK: - Lightning (merged voxels)
 
-    private static func addLightning(to parent: Entity) {
+    private static func addLightning(to parent: Entity, voxelSize: Float = 0.010) {
         let boltColor = UIColor(red: 1.0, green: 0.95, blue: 0.55, alpha: 1)
 
         let bolt = Entity()
         bolt.name = "lightning"
-        bolt.position = SIMD3<Float>(0.02, 0.04, 0.01)
+        bolt.position = SIMD3<Float>(0.02, 0.08, 0.01)
 
-        let c = VoxelBuilder.VoxelCollector(blockSize: 0.008)
+        let boltSize = max(voxelSize, 0.006)
+        let c = VoxelBuilder.VoxelCollector(blockSize: boltSize)
 
         let boltPath: [(Int, Int)] = [
             (0, 4), (0, 3), (1, 2), (0, 1), (1, 0), (0, -1), (1, -2), (0, -3)
         ]
         for (bx, by) in boltPath {
-            c.addAt(color: boltColor, position: SIMD3(Float(bx) * 0.010, Float(by) * 0.010, 0))
+            c.addAt(color: boltColor, position: SIMD3(Float(bx) * voxelSize, Float(by) * voxelSize, 0))
         }
 
         c.flush(into: bolt)
