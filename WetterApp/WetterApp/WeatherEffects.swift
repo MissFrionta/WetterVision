@@ -76,29 +76,32 @@ struct WeatherEffects {
             ? UIColor(red: 0.42, green: 0.42, blue: 0.45, alpha: 1)
             : UIColor(red: 0.82, green: 0.84, blue: 0.88, alpha: 1)
 
-        // Cloud positions raised above tallest buildings
-        // Each cloud: (position, width, depth, height) for varied shapes
-        let clouds: [(pos: SIMD3<Float>, w: Int, d: Int, h: Int)] = [
-            (SIMD3<Float>(-0.05, 0.11, 0.01),  7, 3, 2),  // large flat cloud
-            (SIMD3<Float>( 0.04, 0.12, -0.02), 5, 2, 3),  // tall narrow cloud
-            (SIMD3<Float>( 0.00, 0.10, 0.05),  6, 3, 2),  // wide cloud
-            (SIMD3<Float>(-0.02, 0.12, -0.04), 4, 2, 2),  // small cloud
-            (SIMD3<Float>( 0.06, 0.11, 0.03),  8, 2, 2),  // long cloud
-            (SIMD3<Float>(-0.06, 0.10, -0.02), 5, 3, 3),  // chunky cloud
+        // Each cloud: (position, radiusX, radiusZ, height) — elliptical shapes
+        let clouds: [(pos: SIMD3<Float>, rx: Int, rz: Int, h: Int)] = [
+            (SIMD3<Float>(-0.05, 0.11, 0.01),  8, 4, 2),  // large flat
+            (SIMD3<Float>( 0.04, 0.12, -0.02), 6, 5, 3),  // round tall
+            (SIMD3<Float>( 0.00, 0.10, 0.05),  7, 4, 2),  // wide
+            (SIMD3<Float>(-0.02, 0.12, -0.04), 5, 3, 2),  // small
+            (SIMD3<Float>( 0.06, 0.11, 0.03),  9, 3, 2),  // long
+            (SIMD3<Float>(-0.06, 0.10, -0.02), 6, 5, 3),  // chunky
         ]
 
         let c = VoxelBuilder.VoxelCollector(blockSize: voxelSize)
 
         for cloud in clouds {
-            let w = cloud.w, d = cloud.d, h = cloud.h
-            for dx in -w...w {
-                for dz in -(d/2)...(d/2) {
+            let rx = cloud.rx, rz = cloud.rz, h = cloud.h
+            for dx in -rx...rx {
+                for dz in -rz...rz {
+                    // Elliptical shape: distance check
+                    let ex = Float(dx) / Float(rx)
+                    let ez = Float(dz) / Float(rz)
+                    let dist = ex * ex + ez * ez
+                    guard dist <= 1.0 else { continue }
                     for dy in 0..<h {
-                        // Taper edges: skip outer voxels on upper layers
-                        if dy > 0 && (abs(dx) >= w || abs(dz) >= d / 2) { continue }
-                        if dy >= 2 && abs(dx) >= w - 1 { continue }
-                        // Round the corners
-                        if abs(dx) == w && abs(dz) == d / 2 { continue }
+                        // Upper layers shrink inward
+                        let shrink = Float(dy) * 0.3
+                        let layerDist = ex * ex / max(1.0 - shrink, 0.3) + ez * ez / max(1.0 - shrink, 0.3)
+                        guard layerDist <= 1.0 else { continue }
                         let color = (dx + dz + dy) % 2 == 0 ? lightColor : darkColor
                         let absolutePos = cloud.pos + SIMD3<Float>(Float(dx) * voxelSize, Float(dy) * voxelSize, Float(dz) * voxelSize)
                         c.addAt(color: color, position: absolutePos)
@@ -115,16 +118,18 @@ struct WeatherEffects {
     private static func addRain(to parent: Entity) {
         let rainEntity = Entity()
         rainEntity.name = "rain"
-        rainEntity.position = SIMD3<Float>(0, 0.06, 0)
+        // Start at cloud level
+        rainEntity.position = SIMD3<Float>(0, 0.11, 0)
         // Rotate 180° around X so the plane emits downward
         rainEntity.orientation = simd_quatf(angle: .pi, axis: SIMD3<Float>(1, 0, 0))
 
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
-        emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
+        emitter.emitterShapeSize = SIMD3<Float>(0.12, 0.01, 0.12)
         emitter.mainEmitter.birthRate = 300
         emitter.speed = 0.12
-        emitter.mainEmitter.lifeSpan = 0.8
+        // lifeSpan tuned so drops reach ground level (~y=-0.07) then disappear
+        emitter.mainEmitter.lifeSpan = 0.7
 
         // Rain drops: visible streaks falling down
         emitter.mainEmitter.size = 0.004

@@ -405,7 +405,8 @@ struct VoxelBuilder {
             for z in (pondCz - pondR - 2)...(pondCz + pondR + 2) {
                 let dist = sqrt(Float((x - pondCx) * (x - pondCx) + (z - pondCz) * (z - pondCz)))
                 if dist > Float(pondR) + 0.3 && dist <= Float(pondR) + 2.3 {
-                    c.add(color: Palette.leavesDark, x: x, y: 1, z: z)
+                    let edgeColor = (x + z) % 2 == 0 ? Palette.leavesDark : Palette.grassDark
+                    c.add(color: edgeColor, x: x, y: 1, z: z)
                 }
             }
         }
