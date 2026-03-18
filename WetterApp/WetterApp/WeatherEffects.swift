@@ -140,25 +140,24 @@ struct WeatherEffects {
     private static func addRain(to parent: Entity) {
         let rainEntity = Entity()
         rainEntity.name = "rain"
-        // Start at cloud level
-        rainEntity.position = SIMD3<Float>(0, 0.11, 0)
-        // Rotate 180° around X so the plane emits downward
-        rainEntity.orientation = simd_quatf(angle: .pi, axis: SIMD3<Float>(1, 0, 0))
+        // Start at cloud level — no rotation, gravity does the work
+        rainEntity.position = SIMD3<Float>(0, 0.10, 0)
 
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
-        emitter.emitterShapeSize = SIMD3<Float>(0.08, 0.01, 0.08)
+        emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
         emitter.mainEmitter.birthRate = 300
-        emitter.speed = 0.12
-        // lifeSpan tuned: drops fall from clouds (y=0.11) to just above ground (~y=-0.05)
-        emitter.mainEmitter.lifeSpan = 0.55
+        // Tiny initial speed (plane emits upward by default, but gravity overwhelms immediately)
+        emitter.speed = 0.01
+        // Drops fall from y=0.10 to ground (~y=-0.07): takes ~0.85s at acceleration -0.5
+        emitter.mainEmitter.lifeSpan = 0.85
 
         // Rain drops: visible streaks falling down
         emitter.mainEmitter.size = 0.004
         emitter.mainEmitter.stretchFactor = 8.0
         emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.5, green: 0.7, blue: 0.95, alpha: 0.7)))
-        // Acceleration in world space — pulls drops downward
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.4, 0)
+        // Strong downward pull — overwhelms tiny initial upward speed
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.5, 0)
 
         rainEntity.components.set(emitter)
         parent.addChild(rainEntity)
