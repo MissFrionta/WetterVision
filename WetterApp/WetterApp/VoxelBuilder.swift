@@ -6,7 +6,7 @@ import UIKit
 struct VoxelBuilder {
 
     static let grid: Float = 0.010
-    static let block: Float = 0.009
+    static let block: Float = 0.010
 
     // MARK: - Color Palette
 
@@ -95,14 +95,16 @@ struct VoxelBuilder {
 
         private var voxels: [ColorKey: [SIMD3<Float>]] = [:]
         private let halfSize: Float
+        private let gridSize: Float
 
-        init(blockSize: Float = VoxelBuilder.block) {
+        init(blockSize: Float = VoxelBuilder.block, gridSize: Float = VoxelBuilder.grid) {
             self.halfSize = blockSize / 2
+            self.gridSize = gridSize
         }
 
         /// Add a voxel at grid coordinates.
         func add(color: UIColor, x: Int, y: Int, z: Int) {
-            let pos = SIMD3<Float>(Float(x) * VoxelBuilder.grid, Float(y) * VoxelBuilder.grid, Float(z) * VoxelBuilder.grid)
+            let pos = SIMD3<Float>(Float(x) * gridSize, Float(y) * gridSize, Float(z) * gridSize)
             addAt(color: color, position: pos)
         }
 
@@ -192,7 +194,12 @@ struct VoxelBuilder {
 
         let scene = Entity()
         scene.name = "voxel-scene"
-        let collector = VoxelCollector()
+        let collector: VoxelCollector
+        if cityName == "Tokio" {
+            collector = VoxelCollector(blockSize: 0.005, gridSize: 0.005)
+        } else {
+            collector = VoxelCollector()
+        }
 
         switch cityName {
         case "Berlin":   buildBerlinScene(collector: collector)
@@ -352,36 +359,37 @@ struct VoxelBuilder {
         }
     }
 
-    // MARK: - Tokio: Pagode + Kirschbaum + Teich
+    // MARK: - Tokio: Pagode + Kirschbaum + Teich (2x resolution, gridSize 0.005)
 
     private static func buildTokioScene(collector c: VoxelCollector) {
-        buildGrassGround(collector: c, radius: 8)
+        buildGrassGround(collector: c, radius: 16)
 
         // Pagoda (main landmark, left side)
-        buildPagoda(collector: c, gx: -4, gz: -1)
+        buildPagoda(collector: c, gx: -8, gz: -2)
 
         // Torii gate (iconic red shrine gate, front-right)
-        buildTorii(collector: c, gx: 3, gz: -6)
+        buildTorii(collector: c, gx: 6, gz: -12)
 
         // Cherry trees — scattered around
-        buildCherryTree(collector: c, gx: 6, gz: -3)
-        buildCherryTree(collector: c, gx: -7, gz: -5)
-        buildCherryTree(collector: c, gx: 7, gz: 5)
+        buildCherryTree(collector: c, gx: 12, gz: -6)
+        buildCherryTree(collector: c, gx: -14, gz: -10)
+        buildCherryTree(collector: c, gx: 14, gz: 10)
 
         // Fallen cherry blossom petals on ground
         let petalPositions: [(Int, Int)] = [
-            (5, -4), (7, -2), (6, -1), (8, -3), (5, -2),
-            (-6, -4), (-8, -5), (-7, -3), (-6, -6),
-            (6, 4), (8, 6), (7, 3), (5, 5),
-            (-2, -3), (0, -5), (1, -4), (-1, 3),
+            (10, -8), (14, -4), (12, -2), (16, -6), (10, -4),
+            (-12, -8), (-16, -10), (-14, -6), (-12, -12),
+            (12, 8), (16, 12), (14, 6), (10, 10),
+            (-4, -6), (0, -10), (2, -8), (-2, 6),
+            (3, -9), (-5, -7), (8, 2), (-10, -4),
         ]
         for (px, pz) in petalPositions {
             let color = (px + pz) % 2 == 0 ? Palette.sakuraPink : Palette.sakuraLight
             c.add(color: color, x: px, y: 1, z: pz)
         }
 
-        // Pond (right side, slightly larger)
-        let pondCx = 5, pondCz = 5, pondR = 3
+        // Pond (right side)
+        let pondCx = 10, pondCz = 10, pondR = 6
         for x in (pondCx - pondR)...(pondCx + pondR) {
             for z in (pondCz - pondR)...(pondCz + pondR) {
                 let dist = sqrt(Float((x - pondCx) * (x - pondCx) + (z - pondCz) * (z - pondCz)))
@@ -392,89 +400,109 @@ struct VoxelBuilder {
         }
 
         // Stone edge around pond
-        for x in (pondCx - pondR - 1)...(pondCx + pondR + 1) {
-            for z in (pondCz - pondR - 1)...(pondCz + pondR + 1) {
+        for x in (pondCx - pondR - 2)...(pondCx + pondR + 2) {
+            for z in (pondCz - pondR - 2)...(pondCz + pondR + 2) {
                 let dist = sqrt(Float((x - pondCx) * (x - pondCx) + (z - pondCz) * (z - pondCz)))
-                if dist > Float(pondR) + 0.3 && dist <= Float(pondR) + 1.3 {
+                if dist > Float(pondR) + 0.3 && dist <= Float(pondR) + 2.3 {
                     c.add(color: Palette.stone, x: x, y: 1, z: z)
                 }
             }
         }
 
-        // Small arched bridge over pond
-        buildBridge(collector: c, gx: 3, gz: 5, length: 5)
+        // Arched bridge over pond
+        buildBridge(collector: c, gx: 6, gz: 10, length: 10)
 
-        // Stone lanterns (pair flanking the path)
-        buildStoneLantern(collector: c, gx: 1, gz: -4)
-        buildStoneLantern(collector: c, gx: 5, gz: -4)
+        // Stone lanterns flanking the path
+        buildStoneLantern(collector: c, gx: 2, gz: -8)
+        buildStoneLantern(collector: c, gx: 10, gz: -8)
 
         // Stone stepping path from torii to pagoda
         let pathStones: [(Int, Int)] = [
-            (3, -4), (2, -3), (1, -2), (0, -1), (-1, 0), (-2, 0),
+            (6, -8), (5, -7), (4, -6), (3, -5), (2, -4), (1, -3),
+            (0, -2), (-1, -1), (-2, 0), (-3, 0), (-4, 0),
         ]
         for (sx, sz) in pathStones {
             c.add(color: Palette.stone, x: sx, y: 1, z: sz)
-            // Some stones are wider
-            if (sx + sz) % 3 == 0 {
-                c.add(color: Palette.stoneDark, x: sx + 1, y: 1, z: sz)
-            }
+            c.add(color: Palette.stoneDark, x: sx + 1, y: 1, z: sz)
         }
     }
 
     private static func buildTorii(collector c: VoxelCollector, gx: Int, gz: Int) {
         // Two pillars
-        for y in 1...8 {
-            c.add(color: Palette.pagodaRed, x: gx - 2, y: y, z: gz)
-            c.add(color: Palette.pagodaRed, x: gx + 2, y: y, z: gz)
+        for y in 2...16 {
+            c.add(color: Palette.pagodaRed, x: gx - 4, y: y, z: gz)
+            c.add(color: Palette.pagodaRed, x: gx + 4, y: y, z: gz)
+            // Thicker base
+            if y <= 4 {
+                c.add(color: Palette.pagodaRedDark, x: gx - 4, y: y, z: gz + 1)
+                c.add(color: Palette.pagodaRedDark, x: gx + 4, y: y, z: gz + 1)
+            }
         }
-        // Top crossbar (kasagi) — extends beyond pillars
-        for dx in -3...3 {
-            c.add(color: Palette.pagodaRedDark, x: gx + dx, y: 9, z: gz)
-            c.add(color: Palette.pagodaRed, x: gx + dx, y: 8, z: gz)
+        // Top crossbar (kasagi) — wide, extends beyond pillars
+        for dx in -6...6 {
+            c.add(color: Palette.pagodaRed, x: gx + dx, y: 16, z: gz)
+            c.add(color: Palette.pagodaRedDark, x: gx + dx, y: 17, z: gz)
+            c.add(color: Palette.pagodaRedDark, x: gx + dx, y: 18, z: gz)
         }
-        // Second crossbar (nuki) slightly lower
-        for dx in -2...2 {
-            c.add(color: Palette.pagodaRedDark, x: gx + dx, y: 6, z: gz)
+        // Upturned ends of kasagi
+        c.add(color: Palette.pagodaRedDark, x: gx - 6, y: 19, z: gz)
+        c.add(color: Palette.pagodaRedDark, x: gx + 6, y: 19, z: gz)
+        // Second crossbar (nuki)
+        for dx in -4...4 {
+            c.add(color: Palette.pagodaRedDark, x: gx + dx, y: 11, z: gz)
+            c.add(color: Palette.pagodaRedDark, x: gx + dx, y: 12, z: gz)
         }
     }
 
     private static func buildStoneLantern(collector c: VoxelCollector, gx: Int, gz: Int) {
-        // Base
-        c.add(color: Palette.stoneDark, x: gx, y: 1, z: gz)
+        // Wide base
+        for dx in -1...1 { for dz in -1...1 {
+            c.add(color: Palette.stoneDark, x: gx + dx, y: 2, z: gz + dz)
+        }}
         // Shaft
-        c.add(color: Palette.stone, x: gx, y: 2, z: gz)
-        c.add(color: Palette.stone, x: gx, y: 3, z: gz)
-        // Light chamber
-        c.add(color: Palette.windowYellow, x: gx, y: 4, z: gz)
-        // Roof cap
-        c.add(color: Palette.stoneDark, x: gx, y: 5, z: gz)
-        c.add(color: Palette.stoneDark, x: gx - 1, y: 5, z: gz)
-        c.add(color: Palette.stoneDark, x: gx + 1, y: 5, z: gz)
-        c.add(color: Palette.stoneDark, x: gx, y: 5, z: gz - 1)
-        c.add(color: Palette.stoneDark, x: gx, y: 5, z: gz + 1)
+        for y in 3...7 {
+            c.add(color: Palette.stone, x: gx, y: y, z: gz)
+        }
+        // Light chamber (warm glow, 3x3x2)
+        for dx in -1...1 { for dz in -1...1 {
+            c.add(color: Palette.windowYellow, x: gx + dx, y: 8, z: gz + dz)
+            c.add(color: Palette.windowYellow, x: gx + dx, y: 9, z: gz + dz)
+        }}
+        // Roof cap (cross shape)
+        for dx in -2...2 { for dz in -2...2 {
+            if abs(dx) + abs(dz) <= 3 {
+                c.add(color: Palette.stoneDark, x: gx + dx, y: 10, z: gz + dz)
+            }
+        }}
         // Finial
-        c.add(color: Palette.stone, x: gx, y: 6, z: gz)
+        c.add(color: Palette.stone, x: gx, y: 11, z: gz)
+        c.add(color: Palette.stone, x: gx, y: 12, z: gz)
     }
 
     private static func buildBridge(collector c: VoxelCollector, gx: Int, gz: Int, length: Int) {
-        // Arched bridge: slight curve up in the middle
+        // Smooth parabolic arch
+        let mid = Float(length) / 2.0
         for i in 0..<length {
             let dx = i - length / 2
-            // Arch height: higher in center
-            let archY = i == length / 2 ? 3 : (i == 1 || i == length - 2 ? 2 : 1)
+            let t = abs(Float(i) - mid) / mid
+            let archY = 2 + Int(round(4.0 * (1.0 - t * t)))
+            // Bridge deck (3 wide)
             c.add(color: Palette.pagodaRedDark, x: gx + dx, y: archY, z: gz)
             c.add(color: Palette.pagodaRedDark, x: gx + dx, y: archY, z: gz + 1)
-            // Railings on sides
+            c.add(color: Palette.pagodaRedDark, x: gx + dx, y: archY, z: gz + 2)
+            // Railings at ends and middle
             if i == 0 || i == length / 2 || i == length - 1 {
                 c.add(color: Palette.pagodaRed, x: gx + dx, y: archY + 1, z: gz)
-                c.add(color: Palette.pagodaRed, x: gx + dx, y: archY + 1, z: gz + 1)
+                c.add(color: Palette.pagodaRed, x: gx + dx, y: archY + 2, z: gz)
+                c.add(color: Palette.pagodaRed, x: gx + dx, y: archY + 1, z: gz + 2)
+                c.add(color: Palette.pagodaRed, x: gx + dx, y: archY + 2, z: gz + 2)
             }
         }
     }
 
     private static func buildPagoda(collector c: VoxelCollector, gx: Int, gz: Int) {
-        let tiers: [(width: Int, height: Int)] = [(7, 4), (5, 3), (3, 3)]
-        var currentY = 1
+        let tiers: [(width: Int, height: Int)] = [(14, 8), (10, 6), (6, 6)]
+        var currentY = 2
 
         for (tierIdx, tier) in tiers.enumerated() {
             let halfW = tier.width / 2
@@ -485,16 +513,16 @@ struct VoxelBuilder {
                         let isExterior = abs(dx) == halfW || abs(dz) == halfW
                         guard isExterior else { continue }
                         // Door opening on ground floor front
-                        if tierIdx == 0 && dz == -halfW && abs(dx) <= 1 && y < currentY + 2 {
-                            // Dark opening for door
-                            if y == currentY {
+                        if tierIdx == 0 && dz == -halfW && abs(dx) <= 2 && y < currentY + 4 {
+                            if y <= currentY + 1 {
                                 c.add(color: Palette.doorBrown, x: gx + dx, y: y, z: gz + dz)
                             }
                             continue
                         }
-                        // Window openings on upper floors
+                        // Window openings
                         let isFace = abs(dz) == halfW && abs(dx) < halfW
-                        if isFace && y == currentY + tier.height - 2 && abs(dx) % 2 == 1 {
+                        let relY = y - currentY
+                        if isFace && relY >= 3 && relY % 3 == 0 && abs(dx) >= 2 && abs(dx) % 4 <= 1 {
                             c.add(color: Palette.windowYellow, x: gx + dx, y: y, z: gz + dz)
                             continue
                         }
@@ -506,13 +534,12 @@ struct VoxelBuilder {
 
             // Roof with upturned corners
             let roofY = currentY + tier.height
-            let roofExtend = halfW + 2
+            let roofExtend = halfW + 4
             for dx in -roofExtend...roofExtend {
                 for dz in -roofExtend...roofExtend {
                     let isEdge = abs(dx) == roofExtend || abs(dz) == roofExtend
-                    let isCorner = abs(dx) == roofExtend && abs(dz) == roofExtend
+                    let isCorner = abs(dx) >= roofExtend - 1 && abs(dz) >= roofExtend - 1
                     if isCorner {
-                        // Upturned corner — one voxel higher
                         c.add(color: Palette.pagodaRedDark, x: gx + dx, y: roofY + 1, z: gz + dz)
                         continue
                     }
@@ -521,7 +548,7 @@ struct VoxelBuilder {
                 }
             }
             // Inner roof layer
-            let innerR = halfW + 1
+            let innerR = halfW + 2
             for dx in -innerR...innerR {
                 for dz in -innerR...innerR {
                     if abs(dx) <= halfW && abs(dz) <= halfW {
@@ -530,25 +557,36 @@ struct VoxelBuilder {
                 }
             }
 
-            currentY = roofY + 2
+            currentY = roofY + 4
         }
 
-        // Golden spire on top
-        for y in currentY...(currentY + 2) {
+        // Golden spire
+        for y in currentY...(currentY + 5) {
             c.add(color: Palette.clockGold, x: gx, y: y, z: gz)
         }
-        // Spire ornament
-        c.add(color: Palette.clockGold, x: gx - 1, y: currentY, z: gz)
-        c.add(color: Palette.clockGold, x: gx + 1, y: currentY, z: gz)
-        c.add(color: Palette.clockGold, x: gx, y: currentY, z: gz - 1)
-        c.add(color: Palette.clockGold, x: gx, y: currentY, z: gz + 1)
+        // Spire ornament (cross)
+        for d in 1...2 {
+            c.add(color: Palette.clockGold, x: gx - d, y: currentY, z: gz)
+            c.add(color: Palette.clockGold, x: gx + d, y: currentY, z: gz)
+            c.add(color: Palette.clockGold, x: gx, y: currentY, z: gz - d)
+            c.add(color: Palette.clockGold, x: gx, y: currentY, z: gz + d)
+        }
     }
 
     private static func buildCherryTree(collector c: VoxelCollector, gx: Int, gz: Int) {
-        for y in 1...5 {
+        // Trunk with branches
+        for y in 2...10 {
             c.add(color: Palette.trunk, x: gx, y: y, z: gz)
         }
-        let r = 2, centerY = 7
+        // Branch stubs
+        c.add(color: Palette.trunk, x: gx + 1, y: 8, z: gz)
+        c.add(color: Palette.trunk, x: gx + 2, y: 9, z: gz)
+        c.add(color: Palette.trunk, x: gx, y: 7, z: gz + 1)
+        c.add(color: Palette.trunk, x: gx, y: 8, z: gz + 2)
+        c.add(color: Palette.trunkDark, x: gx - 1, y: 9, z: gz)
+
+        // Sakura crown (larger sphere at 2x)
+        let r = 4, centerY = 14
         for dy in -r...r {
             for dx in -r...r {
                 for dz in -r...r {
