@@ -395,8 +395,7 @@ struct VoxelBuilder {
             for z in (pondCz - pondR)...(pondCz + pondR) {
                 let dist = sqrt(Float((x - pondCx) * (x - pondCx) + (z - pondCz) * (z - pondCz)))
                 guard dist <= Float(pondR) + 0.3 else { continue }
-                let color = (x + z) % 3 == 0 ? Palette.waterDark : Palette.water
-                c.add(color: color, x: x, y: 0, z: z)
+                c.add(color: Palette.water, x: x, y: 0, z: z)
             }
         }
 
@@ -405,8 +404,7 @@ struct VoxelBuilder {
             for z in (pondCz - pondR - 2)...(pondCz + pondR + 2) {
                 let dist = sqrt(Float((x - pondCx) * (x - pondCx) + (z - pondCz) * (z - pondCz)))
                 if dist > Float(pondR) + 0.3 && dist <= Float(pondR) + 2.3 {
-                    let color = (x + z) % 2 == 0 ? Palette.leavesDark : Palette.grassDark
-                    c.add(color: color, x: x, y: 1, z: z)
+                    c.add(color: Palette.leavesDark, x: x, y: 1, z: z)
                 }
             }
         }
@@ -548,7 +546,7 @@ struct VoxelBuilder {
 
             // Roof with upturned corners
             let roofY = currentY + tier.height
-            let roofExtend = halfW + 4
+            let roofExtend = halfW + 2
             for dx in -roofExtend...roofExtend {
                 for dz in -roofExtend...roofExtend {
                     let isEdge = abs(dx) == roofExtend || abs(dz) == roofExtend

@@ -78,15 +78,17 @@ struct WeatherEffects {
 
         // Cloud positions raised above tallest buildings
         let cloudPositions: [SIMD3<Float>] = [
-            SIMD3<Float>(-0.02, 0.11, 0.02),
+            SIMD3<Float>(-0.04, 0.11, 0.02),
             SIMD3<Float>(0.04, 0.12, -0.01),
-            SIMD3<Float>(0.01, 0.10, 0.04),
+            SIMD3<Float>(0.00, 0.10, 0.04),
+            SIMD3<Float>(-0.02, 0.12, -0.03),
+            SIMD3<Float>(0.05, 0.11, 0.03),
         ]
 
         let c = VoxelBuilder.VoxelCollector(blockSize: voxelSize)
 
         for (i, pos) in cloudPositions.enumerated() {
-            let w = i == 1 ? 4 : 3
+            let w = i % 2 == 0 ? 5 : 4
             for dx in -w...w {
                 for dz in -1...1 {
                     for dy in 0...1 {
