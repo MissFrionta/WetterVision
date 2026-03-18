@@ -1,6 +1,6 @@
-# WetterApp — TODO-Liste
+# PixelWeather — TODO-Liste
 
-Stand: 2026-03-16
+Stand: 2026-03-18
 
 ---
 
@@ -30,8 +30,10 @@ Stand: 2026-03-16
 - [x] Voxel-Art-Stil (prozedural, keine externen Assets)
 - [x] Farbpalette konsistent in VoxelBuilder.Palette
 - [x] Performance-Optimierung: Mesh-Merging via VoxelCollector (~700 Entities → ~12 pro Schneekugel)
-- [ ] **Regenpartikel nicht sichtbar** — Regen wird in der Schneekugel nicht angezeigt, muss debuggt werden
-- [ ] **Voxelstaedte verschoenern** — Aktuelle Szenen sind funktional, koennten aesthetisch verbessert werden
+- [x] ~~Regenpartikel nicht sichtbar~~ — gefixt (Session 2026-03-18)
+- [x] **Tokio verschoenert** — 2x Voxel-Aufloesung, Torii, Steg, Laternen, Steinpfad, Kirschblueten, 3D-Wolken
+- [ ] **Berlin verschoenern** — Gleicher Stil wie Tokio (2x Aufloesung, mehr Details). Siehe Anleitung unten.
+- [ ] **New York verschoenern** — Gleicher Stil wie Tokio (2x Aufloesung, mehr Details). Siehe Anleitung unten.
 
 ### Anforderung 5: Dummy-Daten
 - [x] 3 Staedte mit Dummy-Wetterdaten in CityData.swift (Temperatur, Luftfeuchtigkeit, Wind, Zustand, Beschreibung)
@@ -41,14 +43,96 @@ Stand: 2026-03-16
 
 ## Bekannte Bugs / Offene Probleme
 
-### Hoch (muss fuer Abnahme gefixt sein)
-- [ ] **Regenpartikel nicht sichtbar** — Regen-Effekt wird in der Schneekugel nicht angezeigt, muss debuggt werden
-
 ### Mittel (sollte gefixt werden)
-- [ ] **Voxelstaedte verschoenern** — Aktuelle Szenen sind funktional, koennten aber aesthetisch verbessert werden (mehr Details, bessere Proportionen)
+- [ ] **Farbwechsel-Bug beim Drehen** — Voxels mit Checkerboard-Farbmuster (z.B. Teich, Gras) aendern ihre sichtbare Farbe, wenn die Schneekugel gedreht wird. Ursache: benachbarte Voxels verschiedener Farben zeigen je nach Blickwinkel verschiedene Seiten. Workaround: einheitliche Farbe verwenden (wie beim Teichrand gemacht). Fuer Gras/Boden tolerierbar.
 
 ### Niedrig (nice to have)
 - [ ] **Skalierungs-Begrenzung** — Globus und Schneekugel koennen sich beim Skalieren gegenseitig verdecken. Scale-Limits muessen so angepasst werden, dass beide nebeneinander sichtbar bleiben
+
+---
+
+## WICHTIG: Anleitung zum Verschoenern der Staedte (Berlin, New York)
+
+Tokio wurde am 2026-03-18 als erste Stadt auf 2x-Aufloesung umgebaut. Berlin und New York muessen
+auf die gleiche Weise umgebaut werden. Hier ist die vollstaendige Anleitung:
+
+### Schritt 1: Feineren VoxelCollector in buildSnowGlobe erstellen
+
+In `VoxelBuilder.buildSnowGlobe()` wird bereits fuer Tokio ein feinerer Collector erstellt:
+```swift
+if cityName == "Tokio" {
+    collector = VoxelCollector(blockSize: 0.005, gridSize: 0.005)
+} else {
+    collector = VoxelCollector()
+}
+```
+Fuer Berlin/New York die Bedingung erweitern: `if cityName == "Tokio" || cityName == "Berlin" ...`
+
+### Schritt 2: Alle Koordinaten verdoppeln (2x)
+
+- Grid aendert sich von 0.010 auf 0.005 → gleiche physische Groesse bei doppelten Koordinaten
+- `buildGrassGround(radius: 8)` → `radius: 22` (groesser, damit alle Elemente draufpassen)
+- `buildConcreteGround(radius: 8)` → `radius: 22` (fuer New York)
+- Alle Gebaeude-Positionen (gx, gz) verdoppeln
+- Alle Gebaeude-Masse (w, d, h) verdoppeln
+- Tier-Definitionen in Pagoda-Stil verdoppeln: z.B. `(7, 4)` → `(14, 8)`
+
+### Schritt 3: Elemente auf Boden setzen
+
+- Gebaeude, Baeume etc. muessen bei y=1 beginnen (direkt ueber Gras bei y=0)
+- NICHT bei y=2 — das laesst eine sichtbare Luecke zum Boden
+- Teiche/Wasser bei y=0 (gleiche Ebene wie Boden)
+
+### Schritt 4: Stockwerk-Luecken vermeiden
+
+- Bei mehrstoeckigen Gebaeuden: `currentY = roofY + 2` (NICHT +4)
+- roofY + 2 bei gridSize 0.005 = physisch 0.01m Abstand → sieht buen aus
+- roofY + 4 wuerde 2 leere Voxelreihen lassen → sichtbare horizontale Schnitte
+
+### Schritt 5: Kollisionen pruefen
+
+- Baeume haben Kronen-Radius 4 bei 2x → pruefen, ob sie in Gebaeude ragen
+- Dach-Ueberhang (roofExtend = halfW + 2) → keine Elemente unter dem Dach platzieren
+- Teich-Radius pruefen: keine Baeume im Teich
+
+### Schritt 6: Tueren und Fenster anpassen
+
+- Tuer-Oeffnung: `abs(dx) <= 2` bei 2x (statt abs(dx) <= 1)
+- Tuer-Hoehe: `y < currentY + 4` bei 2x
+- Fenster-Muster anpassen: z.B. `relY % 3 == 0 && abs(dx) % 4 <= 1`
+- Tuer auf die Seite platzieren, wo der Zugang/Weg ist
+
+### Schritt 7: Zusaetzliche Details (optional aber empfohlen)
+
+Tokio hat folgende Extras bekommen, die auch fuer andere Staedte sinnvoll waeren:
+- Steinpfad zwischen Elementen
+- Dekorative Elemente (Laternen, Blumen, Baenke etc.)
+- Bewachsene Raender um Wasserflaechen
+- Baum-Stubs (Aeste) am Stamm
+- Kirschblueten/Blaetter auf dem Boden
+
+### Schritt 8: WeatherEffects beachten
+
+- WeatherEffects.apply() bekommt bereits `voxelSize` Parameter
+- Wolken sind 3D-Blob-Kugeln bei y=0.10-0.12 → hoch genug fuer alle Gebaeude
+- Regen startet bei y=0.10, faellt per Gravity (kein Emitter-Rotation!)
+- Bei neuen hohen Gebaeuden pruefen, ob Wolken kollidieren
+
+### Referenz-Werte Tokio (funktioniert, auf AVP getestet):
+
+| Parameter | Wert |
+|---|---|
+| gridSize / blockSize | 0.005 |
+| Ground radius | 22 |
+| Gebaeude start Y | 1 |
+| Teich Y | 0 |
+| Weg Y | 0 |
+| Dach-Extend | halfW + 2 |
+| Tier-Gap | roofY + 2 |
+| Baum-Stamm Y | 1...10 |
+| Baum-Krone centerY | 13, radius 4 |
+| Wolken Y | 0.10-0.12 |
+| Regen emitter Y | 0.10, lifeSpan 0.95 |
 
 ---
 
@@ -58,7 +142,7 @@ Stand: 2026-03-16
 - [ ] **Mehr Staedte hinzufuegen** — z.B. Sydney, Kairo, Rio, Moskau
 - [ ] **Schneekugel-Widgets** — Schneekugeln als platzierbare Widgets im Raum (Shared Space / Immersive Space)
 - [ ] Weitere sinnvolle Funktionen brainstormen (z.B. Tageszeit-Wechsel, Jahreszeiten, AR-Modus)
-- [ ] Verfeinerung der Voxel-Aufloesung fuer mehr Detail
+- [x] ~~Verfeinerung der Voxel-Aufloesung fuer mehr Detail~~ — Tokio auf 2x umgebaut
 - [x] ~~Apple-Globus-Modell aus Reality Composer Pro~~ — Earth.usdz eingebunden
 
 ---
@@ -133,3 +217,27 @@ Referenz-Commit mit funktionierenden Gesten: **f4937e1**
 - [x] CLAUDE.md + TODO.md komplett aktualisiert inkl. @State-Pitfall-Dokumentation
 - [x] Ursache dokumentiert: Label-Collision-Overlap + SwiftUI-Attachment-Gesten-Interception
 - [x] Label-Taps funktionieren zuverlaessig auf echter AVP
+
+### Session 2026-03-18
+- [x] **Regen-Bug gefixt**: Emitter war nach oben gerichtet → 180°-Rotation eingefuehrt, spaeter durch Gravity-Only-Ansatz ersetzt (keine Rotation, speed=0.01, acceleration=-0.5). Regen funktioniert stabil bei Schneekugel-Drehung.
+- [x] **Tokio komplett verschoenert (2x Aufloesung)**:
+  - VoxelCollector um gridSize-Parameter erweitert (konfigurierbar pro Stadt)
+  - gridSize/blockSize 0.005 (halbe Voxelgroesse, doppelte Koordinaten)
+  - Keine Luecken zwischen Voxeln (block = grid fuer ALLE Staedte)
+  - Pagode: 3 Stockwerke, Tuer auf Weg-Seite (+x), Fenster, aufgebogene Dach-Ecken, goldene Spitze
+  - Torii-Tor: 2 Saeulen, Kasagi, Nuki, aufgebogene Enden
+  - Holzsteg (Pier) in den Teich mit Stuetzpfosten
+  - 2 Steinlaternen mit 3x3 Lichtkammer neben dem Torii
+  - Steinpfad vom Torii zur Pagode
+  - 3 Kirschbaeume mit Ast-Stubs und groesserer Krone (r=4)
+  - Kirschblueten-Blaetter auf dem Boden
+  - Teich mit bewachsenem Rand (dunkelgruen, zweifarbig)
+  - Bodenplatte radius 22 (gross genug fuer alle Elemente)
+- [x] **Wolken komplett ueberarbeitet**:
+  - 3D-Blob-Wolken aus ueberlappenden Kugeln (keine flachen Ellipsen)
+  - 6 Wolken mit individuellen Formen und Groessen
+  - Positionen angehoben auf y=0.10-0.12 (ueber Gebaeuden)
+  - voxelSize-Parameter an WeatherEffects durchgereicht (0.005 fuer Tokio)
+- [x] **Regen-Emitter optimiert**: Start bei Wolkenebene y=0.10, Gravity-only (speed=0.01, accel=-0.5), lifeSpan=0.95, emitter 0.10x0.10
+- [x] **App Icon erstellt**: Pixel-Art Wolke + Sonne, 3-Layer Parallax (Back=Himmel, Middle=Sonne, Front=Wolke)
+- [x] **App umbenannt**: Display Name "PixelWeather" via CFBundleDisplayName in Info.plist
