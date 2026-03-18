@@ -108,19 +108,23 @@ struct WeatherEffects {
     private static func addRain(to parent: Entity) {
         let rainEntity = Entity()
         rainEntity.name = "rain"
-        rainEntity.position = SIMD3<Float>(0, 0.04, 0)
+        rainEntity.position = SIMD3<Float>(0, 0.06, 0)
+        // Rotate 180° around X so the plane emits downward
+        rainEntity.orientation = simd_quatf(angle: .pi, axis: SIMD3<Float>(1, 0, 0))
 
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
-        emitter.emitterShapeSize = SIMD3<Float>(0.12, 0.01, 0.12)
-        emitter.mainEmitter.birthRate = 150
-        emitter.speed = 0.15
-        emitter.mainEmitter.lifeSpan = 0.6
+        emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
+        emitter.mainEmitter.birthRate = 300
+        emitter.speed = 0.12
+        emitter.mainEmitter.lifeSpan = 0.8
 
-        // Rain drops: small, blue, falling down
-        emitter.mainEmitter.size = 0.002
-        emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.4, green: 0.65, blue: 0.9, alpha: 0.8)))
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.3, 0)
+        // Rain drops: visible streaks falling down
+        emitter.mainEmitter.size = 0.004
+        emitter.mainEmitter.stretchFactor = 8.0
+        emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.5, green: 0.7, blue: 0.95, alpha: 0.7)))
+        // Acceleration in world space — pulls drops downward
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.4, 0)
 
         rainEntity.components.set(emitter)
         parent.addChild(rainEntity)
