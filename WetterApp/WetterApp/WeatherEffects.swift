@@ -150,7 +150,7 @@ struct WeatherEffects {
         // Tiny initial speed (plane emits upward by default, but gravity overwhelms immediately)
         emitter.speed = 0.01
         // Drops fall from y=0.10 to ground (~y=-0.07): takes ~0.85s at acceleration -0.5
-        emitter.mainEmitter.lifeSpan = 0.85
+        emitter.mainEmitter.lifeSpan = 0.95
 
         // Rain drops: visible streaks falling down
         emitter.mainEmitter.size = 0.004
