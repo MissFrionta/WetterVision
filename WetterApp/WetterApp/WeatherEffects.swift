@@ -77,25 +77,30 @@ struct WeatherEffects {
             : UIColor(red: 0.82, green: 0.84, blue: 0.88, alpha: 1)
 
         // Cloud positions raised above tallest buildings
-        let cloudPositions: [SIMD3<Float>] = [
-            SIMD3<Float>(-0.04, 0.11, 0.02),
-            SIMD3<Float>(0.04, 0.12, -0.01),
-            SIMD3<Float>(0.00, 0.10, 0.04),
-            SIMD3<Float>(-0.02, 0.12, -0.03),
-            SIMD3<Float>(0.05, 0.11, 0.03),
+        // Each cloud: (position, width, depth, height) for varied shapes
+        let clouds: [(pos: SIMD3<Float>, w: Int, d: Int, h: Int)] = [
+            (SIMD3<Float>(-0.05, 0.11, 0.01),  7, 3, 2),  // large flat cloud
+            (SIMD3<Float>( 0.04, 0.12, -0.02), 5, 2, 3),  // tall narrow cloud
+            (SIMD3<Float>( 0.00, 0.10, 0.05),  6, 3, 2),  // wide cloud
+            (SIMD3<Float>(-0.02, 0.12, -0.04), 4, 2, 2),  // small cloud
+            (SIMD3<Float>( 0.06, 0.11, 0.03),  8, 2, 2),  // long cloud
+            (SIMD3<Float>(-0.06, 0.10, -0.02), 5, 3, 3),  // chunky cloud
         ]
 
         let c = VoxelBuilder.VoxelCollector(blockSize: voxelSize)
 
-        for (i, pos) in cloudPositions.enumerated() {
-            let w = i % 2 == 0 ? 5 : 4
+        for cloud in clouds {
+            let w = cloud.w, d = cloud.d, h = cloud.h
             for dx in -w...w {
-                for dz in -1...1 {
-                    for dy in 0...1 {
-                        if abs(dx) == w && (abs(dz) > 0 || dy > 0) { continue }
-                        if dy == 1 && abs(dx) > w - 1 { continue }
+                for dz in -(d/2)...(d/2) {
+                    for dy in 0..<h {
+                        // Taper edges: skip outer voxels on upper layers
+                        if dy > 0 && (abs(dx) >= w || abs(dz) >= d / 2) { continue }
+                        if dy >= 2 && abs(dx) >= w - 1 { continue }
+                        // Round the corners
+                        if abs(dx) == w && abs(dz) == d / 2 { continue }
                         let color = (dx + dz + dy) % 2 == 0 ? lightColor : darkColor
-                        let absolutePos = pos + SIMD3<Float>(Float(dx) * voxelSize, Float(dy) * voxelSize, Float(dz) * voxelSize)
+                        let absolutePos = cloud.pos + SIMD3<Float>(Float(dx) * voxelSize, Float(dy) * voxelSize, Float(dz) * voxelSize)
                         c.addAt(color: color, position: absolutePos)
                     }
                 }

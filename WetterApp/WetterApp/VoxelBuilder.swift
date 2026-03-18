@@ -395,7 +395,8 @@ struct VoxelBuilder {
             for z in (pondCz - pondR)...(pondCz + pondR) {
                 let dist = sqrt(Float((x - pondCx) * (x - pondCx) + (z - pondCz) * (z - pondCz)))
                 guard dist <= Float(pondR) + 0.3 else { continue }
-                c.add(color: Palette.water, x: x, y: 0, z: z)
+                let color = (x + z) % 3 == 0 ? Palette.waterDark : Palette.water
+                c.add(color: color, x: x, y: 0, z: z)
             }
         }
 
@@ -422,8 +423,8 @@ struct VoxelBuilder {
             (0, -2), (-1, -1), (-2, 0), (-3, 0), (-4, 0),
         ]
         for (sx, sz) in pathStones {
-            c.add(color: Palette.stone, x: sx, y: 1, z: sz)
-            c.add(color: Palette.stoneDark, x: sx + 1, y: 1, z: sz)
+            c.add(color: Palette.stone, x: sx, y: 0, z: sz)
+            c.add(color: Palette.stoneDark, x: sx + 1, y: 0, z: sz)
         }
     }
 
@@ -517,15 +518,8 @@ struct VoxelBuilder {
                     for dz in -halfW...halfW {
                         let isExterior = abs(dx) == halfW || abs(dz) == halfW
                         guard isExterior else { continue }
-                        // Door opening on front side (-z)
-                        if tierIdx == 0 && dz == -halfW && abs(dx) <= 2 && y < currentY + 4 {
-                            if y <= currentY + 1 {
-                                c.add(color: Palette.doorBrown, x: gx + dx, y: y, z: gz + dz)
-                            }
-                            continue
-                        }
-                        // Door opening on pond side (+z)
-                        if tierIdx == 0 && dz == halfW && abs(dx) <= 2 && y < currentY + 4 {
+                        // Door opening on path side (+x, facing torii/path)
+                        if tierIdx == 0 && dx == halfW && abs(dz) <= 2 && y < currentY + 4 {
                             if y <= currentY + 1 {
                                 c.add(color: Palette.doorBrown, x: gx + dx, y: y, z: gz + dz)
                             }
