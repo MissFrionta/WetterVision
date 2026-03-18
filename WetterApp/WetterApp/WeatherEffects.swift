@@ -76,32 +76,54 @@ struct WeatherEffects {
             ? UIColor(red: 0.42, green: 0.42, blue: 0.45, alpha: 1)
             : UIColor(red: 0.82, green: 0.84, blue: 0.88, alpha: 1)
 
-        // Each cloud: (position, radiusX, radiusZ, height) — elliptical shapes
-        let clouds: [(pos: SIMD3<Float>, rx: Int, rz: Int, h: Int)] = [
-            (SIMD3<Float>(-0.05, 0.11, 0.01),  8, 4, 2),  // large flat
-            (SIMD3<Float>( 0.04, 0.12, -0.02), 6, 5, 3),  // round tall
-            (SIMD3<Float>( 0.00, 0.10, 0.05),  7, 4, 2),  // wide
-            (SIMD3<Float>(-0.02, 0.12, -0.04), 5, 3, 2),  // small
-            (SIMD3<Float>( 0.06, 0.11, 0.03),  9, 3, 2),  // long
-            (SIMD3<Float>(-0.06, 0.10, -0.02), 6, 5, 3),  // chunky
+        // Each cloud is built from overlapping spheres (blobs) for organic 3D shape
+        // Blob: (dx, dy, dz) offset from cloud center, r = radius in grid units
+        let clouds: [(pos: SIMD3<Float>, blobs: [(dx: Int, dy: Int, dz: Int, r: Int)])] = [
+            // Large puffy cloud
+            (SIMD3<Float>(-0.05, 0.11, 0.01), [
+                (0, 0, 0, 5), (4, 1, 0, 4), (-3, 0, 1, 4), (1, 2, 0, 3)]),
+            // Round tall cloud
+            (SIMD3<Float>( 0.04, 0.12, -0.02), [
+                (0, 0, 0, 4), (2, 2, -1, 3), (-1, 1, 1, 3)]),
+            // Wide cloud
+            (SIMD3<Float>( 0.00, 0.10, 0.05), [
+                (0, 0, 0, 4), (-4, 0, 0, 3), (4, 0, 1, 3), (0, 1, 0, 3)]),
+            // Small cloud
+            (SIMD3<Float>(-0.02, 0.12, -0.04), [
+                (0, 0, 0, 3), (2, 1, 0, 2)]),
+            // Long cloud
+            (SIMD3<Float>( 0.06, 0.11, 0.03), [
+                (0, 0, 0, 4), (5, 0, 0, 3), (-4, 0, 1, 3), (2, 1, 0, 3)]),
+            // Chunky cloud
+            (SIMD3<Float>(-0.06, 0.10, -0.02), [
+                (0, 0, 0, 5), (0, 2, 0, 3), (3, 0, 2, 3), (-2, 1, -1, 3)]),
         ]
 
         let c = VoxelBuilder.VoxelCollector(blockSize: voxelSize)
 
         for cloud in clouds {
-            let rx = cloud.rx, rz = cloud.rz, h = cloud.h
-            for dx in -rx...rx {
-                for dz in -rz...rz {
-                    // Elliptical shape: distance check
-                    let ex = Float(dx) / Float(rx)
-                    let ez = Float(dz) / Float(rz)
-                    let dist = ex * ex + ez * ez
-                    guard dist <= 1.0 else { continue }
-                    for dy in 0..<h {
-                        // Upper layers shrink inward
-                        let shrink = Float(dy) * 0.3
-                        let layerDist = ex * ex / max(1.0 - shrink, 0.3) + ez * ez / max(1.0 - shrink, 0.3)
-                        guard layerDist <= 1.0 else { continue }
+            // Find bounding box from all blobs
+            var minX = Int.max, maxX = Int.min
+            var minY = Int.max, maxY = Int.min
+            var minZ = Int.max, maxZ = Int.min
+            for b in cloud.blobs {
+                minX = min(minX, b.dx - b.r); maxX = max(maxX, b.dx + b.r)
+                minY = min(minY, b.dy - b.r); maxY = max(maxY, b.dy + b.r)
+                minZ = min(minZ, b.dz - b.r); maxZ = max(maxZ, b.dz + b.r)
+            }
+            for dx in minX...maxX {
+                for dy in minY...maxY {
+                    for dz in minZ...maxZ {
+                        // Include voxel if inside ANY blob sphere
+                        var inside = false
+                        for b in cloud.blobs {
+                            let bx = dx - b.dx, by = dy - b.dy, bz = dz - b.dz
+                            if bx * bx + by * by + bz * bz <= b.r * b.r {
+                                inside = true
+                                break
+                            }
+                        }
+                        guard inside else { continue }
                         let color = (dx + dz + dy) % 2 == 0 ? lightColor : darkColor
                         let absolutePos = cloud.pos + SIMD3<Float>(Float(dx) * voxelSize, Float(dy) * voxelSize, Float(dz) * voxelSize)
                         c.addAt(color: color, position: absolutePos)
@@ -125,11 +147,11 @@ struct WeatherEffects {
 
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
-        emitter.emitterShapeSize = SIMD3<Float>(0.12, 0.01, 0.12)
+        emitter.emitterShapeSize = SIMD3<Float>(0.08, 0.01, 0.08)
         emitter.mainEmitter.birthRate = 300
         emitter.speed = 0.12
-        // lifeSpan tuned so drops reach ground level (~y=-0.07) then disappear
-        emitter.mainEmitter.lifeSpan = 0.7
+        // lifeSpan tuned: drops fall from clouds (y=0.11) to just above ground (~y=-0.05)
+        emitter.mainEmitter.lifeSpan = 0.55
 
         // Rain drops: visible streaks falling down
         emitter.mainEmitter.size = 0.004
