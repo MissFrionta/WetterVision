@@ -372,7 +372,7 @@ struct VoxelBuilder {
 
         // Cherry trees — scattered around
         buildCherryTree(collector: c, gx: 12, gz: -6)
-        buildCherryTree(collector: c, gx: -14, gz: -10)
+        buildCherryTree(collector: c, gx: -16, gz: -14)
         buildCherryTree(collector: c, gx: 14, gz: 10)
 
         // Fallen cherry blossom petals on ground
@@ -557,7 +557,7 @@ struct VoxelBuilder {
                 }
             }
 
-            currentY = roofY + 4
+            currentY = roofY + 2
         }
 
         // Golden spire
