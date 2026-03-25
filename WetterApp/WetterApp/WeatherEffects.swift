@@ -219,6 +219,25 @@ struct WeatherEffects {
 
         c.flush(into: bolt)
         bolt.components.set(BillboardComponent())
+        bolt.isEnabled = false // start hidden, flash periodically
         parent.addChild(bolt)
+
+        // Double-flash pattern every 3–6 seconds
+        Task { @MainActor in
+            while !Task.isCancelled {
+                let pause = Double.random(in: 3.0...6.0)
+                try? await Task.sleep(for: .seconds(pause))
+                guard bolt.parent != nil else { break }
+                // Flash 1 (short)
+                bolt.isEnabled = true
+                try? await Task.sleep(for: .seconds(0.1))
+                bolt.isEnabled = false
+                try? await Task.sleep(for: .seconds(0.08))
+                // Flash 2 (slightly longer)
+                bolt.isEnabled = true
+                try? await Task.sleep(for: .seconds(0.15))
+                bolt.isEnabled = false
+            }
+        }
     }
 }
