@@ -32,7 +32,7 @@ Stand: 2026-03-18
 - [x] Performance-Optimierung: Mesh-Merging via VoxelCollector (~700 Entities → ~12 pro Schneekugel)
 - [x] ~~Regenpartikel nicht sichtbar~~ — gefixt (Session 2026-03-18)
 - [x] **Tokio verschoenert** — 2x Voxel-Aufloesung, Torii, Steg, Laternen, Steinpfad, Kirschblueten, 3D-Wolken
-- [ ] **Berlin verschoenern** — Gleicher Stil wie Tokio (2x Aufloesung, mehr Details). Siehe Anleitung unten.
+- [x] **Berlin verschoenert** — 2x Voxel-Aufloesung, Fernsehturm, Brandenburger Tor, Plattenbauten, Berliner Mauer, Spree, Linden-Baeume, Strassenlaternen
 - [ ] **New York verschoenern** — Gleicher Stil wie Tokio (2x Aufloesung, mehr Details). Siehe Anleitung unten.
 
 ### Anforderung 5: Dummy-Daten
@@ -241,3 +241,19 @@ Referenz-Commit mit funktionierenden Gesten: **f4937e1**
 - [x] **Regen-Emitter optimiert**: Start bei Wolkenebene y=0.10, Gravity-only (speed=0.01, accel=-0.5), lifeSpan=0.95, emitter 0.10x0.10
 - [x] **App Icon erstellt**: Pixel-Art Wolke + Sonne, 3-Layer Parallax (Back=Himmel, Middle=Sonne, Front=Wolke)
 - [x] **App umbenannt**: Display Name "PixelWeather" via CFBundleDisplayName in Info.plist
+
+### Session 2026-03-25
+- [x] **Berlin komplett verschoenert (2x Aufloesung)**:
+  - VoxelCollector mit gridSize/blockSize 0.005 (wie Tokio)
+  - Fernsehturm: Schaft, Aussichtsplattform, Kugel mit Ring, Antenne, rotes Licht
+  - Brandenburger Tor: 6 Saeulen (2x2), Architrav, Attika, goldene Quadriga
+  - 3 Plattenbauten: 2x-Masse, Tueroeffnungen, Fenstermuster, Flachdach
+  - Berliner Mauer: Betonsegment mit buntem Graffiti + Rohr oben
+  - Spree: Wasserstreifen (z=14..18) mit bewachsenen Uferkanten
+  - 4 Linden-Baeume: Stamm mit Aesten, grosse Krone (r=4)
+  - 2 Strassenlaternen mit Armen und Leuchten
+  - Parkbank (Holz + Metall)
+  - Kopfsteinpflaster-Weg vom Tor zum Fernsehturm
+  - Falllaub auf dem Boden
+  - Bodenplatte radius 22
+  - Palette erweitert: sandstone/sandstoneDark fuer Brandenburger Tor

@@ -43,6 +43,8 @@ struct VoxelBuilder {
         static let tvTowerSphere = UIColor(red: 0.85, green: 0.85, blue: 0.88, alpha: 1)
         static let plattenbau    = UIColor(red: 0.75, green: 0.72, blue: 0.68, alpha: 1)
         static let plattenbauDark = UIColor(red: 0.65, green: 0.62, blue: 0.58, alpha: 1)
+        static let sandstone     = UIColor(red: 0.85, green: 0.78, blue: 0.60, alpha: 1)
+        static let sandstoneDark = UIColor(red: 0.75, green: 0.68, blue: 0.50, alpha: 1)
 
         // Tokyo
         static let pagodaRed     = UIColor(red: 0.75, green: 0.15, blue: 0.12, alpha: 1)
@@ -195,7 +197,7 @@ struct VoxelBuilder {
         let scene = Entity()
         scene.name = "voxel-scene"
         let collector: VoxelCollector
-        if cityName == "Tokio" {
+        if cityName == "Tokio" || cityName == "Berlin" {
             collector = VoxelCollector(blockSize: 0.005, gridSize: 0.005)
         } else {
             collector = VoxelCollector()
@@ -215,7 +217,7 @@ struct VoxelBuilder {
         root.addChild(scene)
 
         // Weather effects based on dummy data
-        let voxelSize: Float = cityName == "Tokio" ? 0.005 : 0.010
+        let voxelSize: Float = (cityName == "Tokio" || cityName == "Berlin") ? 0.005 : 0.010
         if let weather = CityData.dummyWeather[cityName] {
             WeatherEffects.apply(condition: weather.condition, to: root, voxelSize: voxelSize)
         }
@@ -242,61 +244,191 @@ struct VoxelBuilder {
         return root
     }
 
-    // MARK: - Berlin: Fernsehturm + Plattenbauten
+    // MARK: - Berlin: Fernsehturm + Brandenburger Tor + Plattenbauten (2x resolution, gridSize 0.005)
 
     private static func buildBerlinScene(collector c: VoxelCollector) {
-        buildGrassGround(collector: c, radius: 8)
+        buildGrassGround(collector: c, radius: 22)
 
-        // Fernsehturm — thin shaft, sphere near top, antenna
-        let tx = 0, tz = 0
-        for y in 1...18 {
-            c.add(color: Palette.tvTowerSilver, x: tx, y: y, z: tz)
+        // Fernsehturm (TV Tower) — center landmark
+        buildFernsehturm(collector: c, gx: 0, gz: 0)
+
+        // Brandenburger Tor (Brandenburg Gate) — front
+        buildBrandenburgerTor(collector: c, gx: 0, gz: -14)
+
+        // Plattenbauten (socialist apartment blocks)
+        buildPlattenbau2x(collector: c, gx: -18, gz: -4, w: 10, d: 6, h: 16)
+        buildPlattenbau2x(collector: c, gx: 10, gz: 4, w: 10, d: 6, h: 12)
+        buildPlattenbau2x(collector: c, gx: -8, gz: 8, w: 8, d: 6, h: 10)
+
+        // Berlin Wall segment with "graffiti"
+        buildBerlinWall(collector: c, gx: 16, gz: -8, length: 10)
+
+        // Spree river section (back of scene)
+        for x in -10...10 {
+            for z in 14...18 {
+                let dist = sqrt(Float(x * x + z * z))
+                guard dist <= 22.5 else { continue }
+                let color = (x + z) % 3 == 0 ? Palette.waterDark : Palette.water
+                c.add(color: color, x: x, y: 0, z: z)
+            }
         }
-        // Sphere bulge (3x3x3 sphere at y=14..16)
-        for dy in -1...1 {
-            for dx in -1...1 {
-                for dz in -1...1 {
-                    let dist = abs(dx) + abs(dy) + abs(dz)
-                    if dist <= 2 {
-                        c.add(color: Palette.tvTowerSphere, x: tx + dx, y: 15 + dy, z: tz + dz)
+        // Overgrown bank edges
+        for x in -11...11 {
+            let dist1 = sqrt(Float(x * x + 13 * 13))
+            let dist2 = sqrt(Float(x * x + 19 * 19))
+            if dist1 <= 22.5 {
+                let edgeColor = x % 2 == 0 ? Palette.leavesDark : Palette.grassDark
+                c.add(color: edgeColor, x: x, y: 1, z: 13)
+            }
+            if dist2 <= 22.5 {
+                let edgeColor = x % 2 == 0 ? Palette.grassDark : Palette.leavesDark
+                c.add(color: edgeColor, x: x, y: 1, z: 19)
+            }
+        }
+
+        // Linden trees (Berlin's "Unter den Linden")
+        buildLindenTree(collector: c, gx: -14, gz: -16)
+        buildLindenTree(collector: c, gx: 14, gz: -16)
+        buildLindenTree(collector: c, gx: -18, gz: 6)
+        buildLindenTree(collector: c, gx: 18, gz: -4)
+
+        // Street lamps
+        buildStreetLamp(collector: c, gx: -4, gz: -8)
+        buildStreetLamp(collector: c, gx: 4, gz: -8)
+
+        // Cobblestone path from gate to tower
+        let pathStones: [(Int, Int)] = [
+            (0, -12), (-1, -11), (0, -10), (1, -9), (0, -8),
+            (-1, -7), (0, -6), (1, -5), (0, -4), (-1, -3),
+            (0, -2), (0, -1),
+        ]
+        for (sx, sz) in pathStones {
+            c.add(color: Palette.stone, x: sx, y: 0, z: sz)
+            c.add(color: Palette.stoneDark, x: sx + 1, y: 0, z: sz)
+        }
+
+        // Park bench near path
+        buildParkBench(collector: c, gx: 3, gz: -4)
+
+        // Fallen leaves on ground
+        let leafPositions: [(Int, Int)] = [
+            (-10, -12), (-16, -10), (12, -4), (16, -2),
+            (-6, 6), (6, 8), (-8, -8), (10, -10),
+            (-2, 4), (4, 2), (-14, 4), (8, -6),
+        ]
+        for (lx, lz) in leafPositions {
+            let color = (lx + lz) % 2 == 0 ? Palette.leavesDark : Palette.leaves
+            c.add(color: color, x: lx, y: 1, z: lz)
+        }
+    }
+
+    private static func buildFernsehturm(collector c: VoxelCollector, gx: Int, gz: Int) {
+        // Shaft (thin, 1 wide)
+        for y in 1...36 {
+            c.add(color: Palette.tvTowerSilver, x: gx, y: y, z: gz)
+        }
+
+        // Observation deck / restaurant (wider ring at y=26..28)
+        for y in 26...28 {
+            for dx in -2...2 {
+                for dz in -2...2 {
+                    let dist = abs(dx) + abs(dz)
+                    if dist <= 2 && !(dx == 0 && dz == 0) {
+                        c.add(color: Palette.tvTowerSphere, x: gx + dx, y: y, z: gz + dz)
                     }
                 }
             }
         }
-        // Wider ring around sphere
-        for dx in -2...2 {
-            for dz in -2...2 {
-                let dist = abs(dx) + abs(dz)
-                if dist == 2 {
-                    c.add(color: Palette.tvTowerSphere, x: tx + dx, y: 15, z: tz + dz)
+
+        // Sphere bulge (5x5x5 at y=30)
+        for dy in -2...2 {
+            for dx in -2...2 {
+                for dz in -2...2 {
+                    let dist = abs(dx) + abs(dy) + abs(dz)
+                    if dist <= 3 {
+                        c.add(color: Palette.tvTowerSphere, x: gx + dx, y: 30 + dy, z: gz + dz)
+                    }
                 }
             }
         }
-        // Antenna tip
-        for y in 19...22 {
-            c.add(color: Palette.tvTowerSilver, x: tx, y: y, z: tz)
+
+        // Wider ring around sphere
+        for dx in -3...3 {
+            for dz in -3...3 {
+                let dist = abs(dx) + abs(dz)
+                if dist == 3 || dist == 4 {
+                    c.add(color: Palette.tvTowerSphere, x: gx + dx, y: 30, z: gz + dz)
+                }
+            }
         }
 
-        // Plattenbauten
-        buildPlattenbau(collector: c, gx: -8, gz: -3, w: 5, h: 8)
-        buildPlattenbau(collector: c, gx: 4, gz: 2, w: 6, h: 6)
-        buildPlattenbau(collector: c, gx: -4, gz: 5, w: 4, h: 5)
+        // Antenna
+        for y in 37...44 {
+            c.add(color: Palette.tvTowerSilver, x: gx, y: y, z: gz)
+        }
 
-        // Trees
-        buildRoundTree(collector: c, gx: -4, gz: -7, height: 4)
-        buildRoundTree(collector: c, gx: 8, gz: -4, height: 3)
+        // Red light at top
+        c.add(color: Palette.flower, x: gx, y: 45, z: gz)
     }
 
-    private static func buildPlattenbau(collector c: VoxelCollector, gx: Int, gz: Int, w: Int, h: Int) {
-        let d = 3
+    private static func buildBrandenburgerTor(collector c: VoxelCollector, gx: Int, gz: Int) {
+        // 6 columns (Doric style, 2x2 each)
+        let columnXs = [-8, -5, -2, 2, 5, 8]
+        for cx in columnXs {
+            for y in 1...14 {
+                for dz in 0...1 {
+                    let color = y % 4 == 0 ? Palette.sandstoneDark : Palette.sandstone
+                    c.add(color: color, x: gx + cx, y: y, z: gz + dz)
+                    c.add(color: color, x: gx + cx + 1, y: y, z: gz + dz)
+                }
+            }
+        }
+
+        // Architrave (entablature)
+        for x in -9...9 {
+            for dz in -1...2 {
+                c.add(color: Palette.sandstoneDark, x: gx + x, y: 15, z: gz + dz)
+                c.add(color: Palette.sandstone, x: gx + x, y: 16, z: gz + dz)
+            }
+        }
+
+        // Attic / parapet
+        for x in -9...9 {
+            c.add(color: Palette.sandstoneDark, x: gx + x, y: 17, z: gz)
+            c.add(color: Palette.sandstoneDark, x: gx + x, y: 17, z: gz + 1)
+        }
+
+        // Quadriga (simplified golden block cluster on top)
+        for dx in -2...2 {
+            c.add(color: Palette.clockGold, x: gx + dx, y: 18, z: gz)
+            c.add(color: Palette.clockGold, x: gx + dx, y: 18, z: gz + 1)
+        }
+        for dx in -1...1 {
+            c.add(color: Palette.clockGold, x: gx + dx, y: 19, z: gz)
+            c.add(color: Palette.clockGold, x: gx + dx, y: 19, z: gz + 1)
+        }
+        c.add(color: Palette.clockGold, x: gx, y: 20, z: gz)
+    }
+
+    private static func buildPlattenbau2x(collector c: VoxelCollector, gx: Int, gz: Int,
+                                           w: Int, d: Int, h: Int) {
         for y in 1...h {
             for dx in 0..<w {
                 for dz in 0..<d {
                     let isExterior = dx == 0 || dx == w - 1 || dz == 0 || dz == d - 1
                     guard isExterior else { continue }
 
+                    // Door opening (front face, center, ground floor)
+                    if dz == 0 && abs(dx - w / 2) <= 2 && y < 5 {
+                        if y <= 2 {
+                            c.add(color: Palette.doorBrown, x: gx + dx, y: y, z: gz + dz)
+                        }
+                        continue
+                    }
+
+                    // Windows (front and back faces)
                     let isFrontBack = dz == 0 || dz == d - 1
-                    if isFrontBack && y >= 2 && y % 2 == 0 && dx > 0 && dx < w - 1 && dx % 2 == 1 {
+                    if isFrontBack && y >= 3 && y % 3 == 0 && dx > 1 && dx < w - 2 && dx % 3 != 0 {
                         c.add(color: Palette.windowBlue, x: gx + dx, y: y, z: gz + dz)
                         continue
                     }
@@ -312,6 +444,82 @@ struct VoxelBuilder {
                 c.add(color: Palette.concreteDark, x: gx + dx, y: h + 1, z: gz + dz)
             }
         }
+    }
+
+    private static func buildBerlinWall(collector c: VoxelCollector, gx: Int, gz: Int, length: Int) {
+        let graffitiColors: [UIColor] = [
+            Palette.flower, Palette.flowerYellow, Palette.windowBlue,
+            Palette.sakuraPink, Palette.leaves, Palette.pagodaRed
+        ]
+
+        for i in 0..<length {
+            for y in 1...6 {
+                let isGraffiti = y >= 2 && y <= 5 && i > 0 && i < length - 1
+                    && (i * 7 + y * 3) % 5 < 2
+                if isGraffiti {
+                    let color = graffitiColors[(i + y) % graffitiColors.count]
+                    c.add(color: color, x: gx, y: y, z: gz + i)
+                } else {
+                    c.add(color: Palette.concrete, x: gx, y: y, z: gz + i)
+                }
+                c.add(color: Palette.concreteDark, x: gx + 1, y: y, z: gz + i)
+            }
+            // Rounded pipe on top
+            c.add(color: Palette.concreteDark, x: gx, y: 7, z: gz + i)
+            c.add(color: Palette.concreteDark, x: gx + 1, y: 7, z: gz + i)
+        }
+    }
+
+    private static func buildLindenTree(collector c: VoxelCollector, gx: Int, gz: Int) {
+        // Trunk (tall, with branch stubs)
+        for y in 1...10 {
+            c.add(color: Palette.trunk, x: gx, y: y, z: gz)
+        }
+        c.add(color: Palette.trunk, x: gx + 1, y: 7, z: gz)
+        c.add(color: Palette.trunk, x: gx - 1, y: 8, z: gz)
+        c.add(color: Palette.trunk, x: gx, y: 7, z: gz + 1)
+        c.add(color: Palette.trunkDark, x: gx, y: 9, z: gz - 1)
+
+        // Crown (sphere radius 4, like cherry trees in Tokio)
+        let r = 4, centerY = 13
+        for dy in -r...r {
+            for dx in -r...r {
+                for dz in -r...r {
+                    let dist = sqrt(Float(dx * dx + dy * dy + dz * dz))
+                    guard dist <= Float(r) + 0.3 else { continue }
+                    let color = abs(dx + dz + dy) % 2 == 0 ? Palette.leaves : Palette.leavesBright
+                    c.add(color: color, x: gx + dx, y: centerY + dy, z: gz + dz)
+                }
+            }
+        }
+    }
+
+    private static func buildStreetLamp(collector c: VoxelCollector, gx: Int, gz: Int) {
+        // Pole
+        for y in 1...8 {
+            c.add(color: Palette.steel, x: gx, y: y, z: gz)
+        }
+        // Arms
+        c.add(color: Palette.steelDark, x: gx + 1, y: 8, z: gz)
+        c.add(color: Palette.steelDark, x: gx - 1, y: 8, z: gz)
+        // Lamp heads
+        c.add(color: Palette.windowYellow, x: gx, y: 9, z: gz)
+        c.add(color: Palette.windowYellow, x: gx + 1, y: 9, z: gz)
+        c.add(color: Palette.windowYellow, x: gx - 1, y: 9, z: gz)
+    }
+
+    private static func buildParkBench(collector c: VoxelCollector, gx: Int, gz: Int) {
+        // Legs (metal)
+        c.add(color: Palette.steel, x: gx, y: 1, z: gz)
+        c.add(color: Palette.steel, x: gx + 2, y: 1, z: gz)
+        // Seat (wood)
+        c.add(color: Palette.trunk, x: gx, y: 2, z: gz)
+        c.add(color: Palette.trunk, x: gx + 1, y: 2, z: gz)
+        c.add(color: Palette.trunk, x: gx + 2, y: 2, z: gz)
+        // Backrest
+        c.add(color: Palette.trunkDark, x: gx, y: 3, z: gz)
+        c.add(color: Palette.trunkDark, x: gx + 1, y: 3, z: gz)
+        c.add(color: Palette.trunkDark, x: gx + 2, y: 3, z: gz)
     }
 
     // MARK: - New York: Skyscrapers
