@@ -190,12 +190,8 @@ struct WeatherEffects {
         // Near-zero initial speed so flakes don't go upward first
         emitter.speed = 0.001
         emitter.mainEmitter.lifeSpan = 2.0
-        // Emit continuously without idle pauses
-        emitter.timing = .repeating(
-            warmUp: .init(duration: 0),
-            emit: .init(duration: 1),
-            idle: .init(duration: 0)
-        )
+        emitter.emissionDuration = 100
+        emitter.idleDuration = 0
 
         // Snowflakes: small, white, drifting down slowly
         emitter.mainEmitter.size = 0.003
