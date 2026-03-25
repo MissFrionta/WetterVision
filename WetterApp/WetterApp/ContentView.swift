@@ -21,7 +21,6 @@ struct ContentView: View {
     @State private var snowGlobePinchStart: Float = 0.85
 
     @State private var globeEntity: Entity?
-    @State private var snowGlobeEntity: Entity?
 
     var body: some View {
         RealityView { content, attachments in
@@ -217,7 +216,6 @@ struct ContentView: View {
             sg.children.forEach { $0.removeFromParent() }
             sg.removeFromParent()
         }
-        snowGlobeEntity = nil
     }
 
     private func updateSnowGlobe(content: RealityViewContent, attachments: RealityViewAttachments) {
@@ -227,8 +225,7 @@ struct ContentView: View {
             let targetName = "snowglobe-\(city.name)"
 
             // Check if correct snow globe already exists (by searching scene graph)
-            if let existing = root?.children.first(where: { $0.name == targetName }) {
-                snowGlobeEntity = existing
+            if root?.children.contains(where: { $0.name == targetName }) == true {
                 return // Same city, nothing to do
             }
 
@@ -241,7 +238,6 @@ struct ContentView: View {
             newGlobe.scale = SIMD3<Float>(repeating: snowGlobeScale)
 
             root?.addChild(newGlobe)
-            snowGlobeEntity = newGlobe
 
             // Attach weather panel to scene root (not snow globe, so it doesn't rotate with it)
             if let panel = attachments.entity(for: "weather-panel") {
