@@ -68,6 +68,12 @@ struct ContentView: View {
                 if let sg = root.children.first(where: { $0.name.hasPrefix("snowglobe-") }) {
                     sg.orientation = snowGlobeRotation
                     sg.scale = SIMD3<Float>(repeating: snowGlobeScale)
+
+                    // Counter-scale particle emitters: RealityKit ParticleEmitterComponent
+                    // flickers at non-1.0 parent scales. Keep particles at effective scale 1.0.
+                    let particleInverseScale = SIMD3<Float>(repeating: 1.0 / snowGlobeScale)
+                    sg.findEntity(named: "snow")?.scale = particleInverseScale
+                    sg.findEntity(named: "rain")?.scale = particleInverseScale
                 }
             }
         } attachments: {
