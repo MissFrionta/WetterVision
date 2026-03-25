@@ -178,23 +178,21 @@ struct WeatherEffects {
     // MARK: - Snow (Particle System)
 
     private static func addSnow(to parent: Entity) {
+        // Based on rain emitter (which works reliably), but white and slower
         let snowEntity = Entity()
         snowEntity.name = "snow"
-        // Start at cloud level so snow drifts down through entire globe
         snowEntity.position = SIMD3<Float>(0, 0.10, 0)
 
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
         emitter.mainEmitter.birthRate = 100
-        // Near-zero initial speed so flakes fall immediately (no upward drift)
-        emitter.speed = 0.001
-        emitter.mainEmitter.lifeSpan = 2.0
+        emitter.speed = 0.01
+        emitter.mainEmitter.lifeSpan = 0.95
 
-        // Snowflakes: small, white, drifting down slowly
         emitter.mainEmitter.size = 0.003
         emitter.mainEmitter.color = .constant(.single(UIColor(white: 1.0, alpha: 0.9)))
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.08, 0)
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.35, 0)
 
         snowEntity.components.set(emitter)
         parent.addChild(snowEntity)
