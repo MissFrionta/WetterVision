@@ -255,7 +255,16 @@ struct VoxelBuilder {
     // MARK: - Berlin: Fernsehturm + Brandenburger Tor + Plattenbauten (2x resolution, gridSize 0.005)
 
     private static func buildBerlinScene(collector c: VoxelCollector) {
-        buildGrassGround(collector: c, radius: 22)
+        // Snow-covered ground (white top, dirt below)
+        let snow = UIColor(white: 0.95, alpha: 1)
+        for x in -22...22 {
+            for z in -22...22 {
+                let dist = sqrt(Float(x * x + z * z))
+                guard dist <= 22.5 else { continue }
+                c.add(color: snow, x: x, y: 0, z: z)
+                c.add(color: Palette.dirt, x: x, y: -1, z: z)
+            }
+        }
 
         // Fernsehturm (TV Tower) — center landmark
         buildFernsehturm(collector: c, gx: 0, gz: 0)
@@ -382,18 +391,7 @@ struct VoxelBuilder {
         c.add(color: snow, x: 4, y: 4, z: -4)
         c.add(color: snow, x: 5, y: 4, z: -4)
 
-        // Ground snow patches (scattered white on grass)
-        let snowPatches: [(Int, Int)] = [
-            (-10, -12), (-16, -10), (12, -4), (16, -2),
-            (-6, 6), (6, 8), (-8, -8), (10, -10),
-            (-2, 4), (4, 2), (-14, 4), (8, -6),
-            (-4, -14), (8, -12), (-12, 2), (2, 12),
-            (0, 6), (-6, -2), (6, -6), (-10, -6),
-        ]
-        for (sx, sz) in snowPatches {
-            c.add(color: snow, x: sx, y: 1, z: sz)
-            c.add(color: snow, x: sx + 1, y: 1, z: sz)
-        }
+        // (Ground is already fully snow-covered)
     }
 
     private static func buildFernsehturm(collector c: VoxelCollector, gx: Int, gz: Int) {

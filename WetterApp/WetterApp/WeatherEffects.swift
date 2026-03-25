@@ -188,7 +188,7 @@ struct WeatherEffects {
         emitter.emitterShapeSize = SIMD3<Float>(0.12, 0.01, 0.12)
         emitter.mainEmitter.birthRate = 60
         emitter.speed = 0.01
-        emitter.mainEmitter.lifeSpan = 3.0
+        emitter.mainEmitter.lifeSpan = 2.0
 
         // Snowflakes: small, white, drifting down slowly from cloud level
         emitter.mainEmitter.size = 0.003
