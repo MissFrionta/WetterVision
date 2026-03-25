@@ -33,7 +33,7 @@ Stand: 2026-03-18
 - [x] ~~Regenpartikel nicht sichtbar~~ — gefixt (Session 2026-03-18)
 - [x] **Tokio verschoenert** — 2x Voxel-Aufloesung, Torii, Steg, Laternen, Steinpfad, Kirschblueten, 3D-Wolken
 - [x] **Berlin verschoenert** — 2x Voxel-Aufloesung, Fernsehturm, Brandenburger Tor, Plattenbauten, Berliner Mauer, Spree, Linden-Baeume, Strassenlaternen
-- [ ] **New York verschoenern** — Gleicher Stil wie Tokio (2x Aufloesung, mehr Details). Siehe Anleitung unten.
+- [x] **New York verschoenert** — 2x Voxel-Aufloesung, Empire State, Freiheitsstatue, Skyscrapers, Water Towers, Central Park, Yellow Cabs
 
 ### Anforderung 5: Dummy-Daten
 - [x] 3 Staedte mit Dummy-Wetterdaten in CityData.swift (Temperatur, Luftfeuchtigkeit, Wind, Zustand, Beschreibung)
@@ -257,3 +257,14 @@ Referenz-Commit mit funktionierenden Gesten: **f4937e1**
   - Falllaub auf dem Boden
   - Bodenplatte radius 22
   - Palette erweitert: sandstone/sandstoneDark fuer Brandenburger Tor
+- [x] **New York komplett verschoenert (2x Aufloesung)**:
+  - VoxelCollector mit gridSize/blockSize 0.005 (wie Tokio/Berlin)
+  - Empire State Building: 3 Art-Deco Setback-Stufen, Fenster, Tuer, dekorative Gesimse, Spire
+  - 4 Skyscrapers: 2x-Masse, Tueroeffnungen, Fenstermuster, Flachdaecher
+  - Freiheitsstatue: Stufenpodest, Robe, Krone mit Spitzen, Fackel-Arm, Tablet-Arm
+  - 2 Water Towers auf Daechern (Holztank auf Stahlstelzen)
+  - Central Park: Gruenflaeche mit 2 Linden-Baeumen und Parkbank
+  - 2 Strassen (Betonstreifen) mit 3 Yellow Cabs
+  - 2 Fire Hydrants, 2 Strassenlaternen
+  - Bodenplatte radius 22 (Beton)
+  - Palette erweitert: libertyGreen/libertyGreenDk fuer Freiheitsstatue
