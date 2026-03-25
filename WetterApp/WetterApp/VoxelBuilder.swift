@@ -617,11 +617,11 @@ struct VoxelBuilder {
             for y in tier.startY...tier.endY {
                 for dx in nhw..<hw {
                     for dz in nhw..<hw {
-                        let isExterior = dx == -hw || dx == hw - 1 || dz == -hw || dz == hw - 1
+                        let isExterior = dx == nhw || dx == hw - 1 || dz == nhw || dz == hw - 1
                         guard isExterior else { continue }
 
                         // Door opening (base tier, front face)
-                        if tierIdx == 0 && dz == -hw && abs(dx) <= 1 && y < tier.startY + 5 {
+                        if tierIdx == 0 && dz == nhw && abs(dx) <= 1 && y < tier.startY + 5 {
                             if y <= tier.startY + 2 {
                                 c.add(color: Palette.doorBrown, x: gx + dx, y: y, z: gz + dz)
                             }
@@ -629,8 +629,8 @@ struct VoxelBuilder {
                         }
 
                         // Windows on all faces
-                        let isFace = (dz == -hw || dz == hw - 1) && dx > -hw && dx < hw - 1
-                        let isSide = (dx == -hw || dx == hw - 1) && dz > -hw && dz < hw - 1
+                        let isFace = (dz == nhw || dz == hw - 1) && dx > nhw && dx < hw - 1
+                        let isSide = (dx == nhw || dx == hw - 1) && dz > nhw && dz < hw - 1
                         let relY = y - tier.startY
                         if (isFace || isSide) && relY >= 2 && relY % 3 == 0 {
                             let color = (dx + y + dz) % 5 == 0 ? Palette.windowYellow : Palette.windowBlue
