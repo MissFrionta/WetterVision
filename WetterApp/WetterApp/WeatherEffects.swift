@@ -188,11 +188,11 @@ struct WeatherEffects {
         emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
         emitter.mainEmitter.birthRate = 100
         emitter.speed = 0.01
-        emitter.mainEmitter.lifeSpan = 0.95
+        emitter.mainEmitter.lifeSpan = 1.4
 
         emitter.mainEmitter.size = 0.003
         emitter.mainEmitter.color = .constant(.single(UIColor(white: 1.0, alpha: 0.9)))
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.35, 0)
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.18, 0)
 
         snowEntity.components.set(emitter)
         parent.addChild(snowEntity)
