@@ -85,13 +85,13 @@ struct WeatherEffects {
 
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .sphere
-        emitter.emitterShapeSize = SIMD3<Float>(0.14, 0.14, 0.14)
+        emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.10, 0.10)
         emitter.mainEmitter.birthRate = 15
-        emitter.speed = 0.008
-        emitter.mainEmitter.lifeSpan = 4.0
+        emitter.speed = 0.005
+        emitter.mainEmitter.lifeSpan = 2.5
         emitter.mainEmitter.size = 0.002
         emitter.mainEmitter.color = .constant(.single(UIColor(red: 1.0, green: 0.92, blue: 0.40, alpha: 0.4)))
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, 0.01, 0)
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.008, 0)
 
         sparkleEntity.components.set(emitter)
         parent.addChild(sparkleEntity)
