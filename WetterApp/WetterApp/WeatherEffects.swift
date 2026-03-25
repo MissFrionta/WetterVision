@@ -180,17 +180,24 @@ struct WeatherEffects {
     private static func addSnow(to parent: Entity) {
         let snowEntity = Entity()
         snowEntity.name = "snow"
-        // Start at cloud level (same as rain) so snow drifts down through entire globe
+        // Start at cloud level so snow drifts down through entire globe
         snowEntity.position = SIMD3<Float>(0, 0.10, 0)
 
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
-        emitter.emitterShapeSize = SIMD3<Float>(0.12, 0.01, 0.12)
-        emitter.mainEmitter.birthRate = 60
-        emitter.speed = 0.01
+        emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
+        emitter.mainEmitter.birthRate = 100
+        // Near-zero initial speed so flakes don't go upward first
+        emitter.speed = 0.001
         emitter.mainEmitter.lifeSpan = 2.0
+        // Emit continuously without idle pauses
+        emitter.timing = .repeating(
+            warmUp: .init(duration: 0),
+            emit: .init(duration: 1),
+            idle: .init(duration: 0)
+        )
 
-        // Snowflakes: small, white, drifting down slowly from cloud level
+        // Snowflakes: small, white, drifting down slowly
         emitter.mainEmitter.size = 0.003
         emitter.mainEmitter.color = .constant(.single(UIColor(white: 1.0, alpha: 0.9)))
         emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.08, 0)
