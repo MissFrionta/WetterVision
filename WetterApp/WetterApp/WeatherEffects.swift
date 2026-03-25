@@ -14,6 +14,7 @@ struct WeatherEffects {
         switch condition {
         case .sunny:
             addSun(to: effectsRoot, voxelSize: voxelSize)
+            addSunSparkles(to: effectsRoot)
         case .cloudy:
             addClouds(to: effectsRoot, dark: false, voxelSize: voxelSize)
         case .rainy:
@@ -36,6 +37,7 @@ struct WeatherEffects {
     private static func addSun(to parent: Entity, voxelSize: Float = 0.010) {
         let sunColor = UIColor(red: 0.98, green: 0.85, blue: 0.25, alpha: 1)
         let sunBright = UIColor(red: 1.0, green: 0.95, blue: 0.50, alpha: 1)
+        let sunGlow = UIColor(red: 1.0, green: 0.92, blue: 0.40, alpha: 1)
 
         let sunRoot = Entity()
         sunRoot.name = "sun"
@@ -43,27 +45,56 @@ struct WeatherEffects {
 
         let c = VoxelBuilder.VoxelCollector(blockSize: voxelSize)
 
-        // Core (3x3)
-        for dx in -1...1 {
-            for dy in -1...1 {
-                let color = (abs(dx) + abs(dy)) == 0 ? sunBright : sunColor
+        // Core (5x5 diamond) — bigger and brighter
+        for dx in -2...2 {
+            for dy in -2...2 {
+                let dist = abs(dx) + abs(dy)
+                guard dist <= 2 else { continue }
+                let color = dist == 0 ? sunBright : (dist == 1 ? sunColor : sunGlow)
                 c.addAt(color: color, position: SIMD3(Float(dx) * voxelSize, Float(dy) * voxelSize, 0))
             }
         }
 
-        // Rays (extending voxels in 4 directions + diagonals)
-        let rayPositions: [(Int, Int)] = [
-            (0, 2), (0, -2), (2, 0), (-2, 0),
-            (2, 2), (2, -2), (-2, 2), (-2, -2),
-            (0, 3), (0, -3), (3, 0), (-3, 0),
+        // Rays in 8 directions — long cardinal, medium diagonal
+        let rayPositions: [(Int, Int, UIColor)] = [
+            // Cardinal rays (long)
+            (0, 3, sunColor), (0, 4, sunColor), (0, 5, sunGlow),
+            (0, -3, sunColor), (0, -4, sunColor), (0, -5, sunGlow),
+            (3, 0, sunColor), (4, 0, sunColor), (5, 0, sunGlow),
+            (-3, 0, sunColor), (-4, 0, sunColor), (-5, 0, sunGlow),
+            // Diagonal rays (medium)
+            (3, 3, sunColor), (4, 4, sunGlow),
+            (3, -3, sunColor), (4, -4, sunGlow),
+            (-3, 3, sunColor), (-4, 4, sunGlow),
+            (-3, -3, sunColor), (-4, -4, sunGlow),
         ]
-        for (rx, ry) in rayPositions {
-            c.addAt(color: sunColor, position: SIMD3(Float(rx) * voxelSize, Float(ry) * voxelSize, 0))
+        for (rx, ry, color) in rayPositions {
+            c.addAt(color: color, position: SIMD3(Float(rx) * voxelSize, Float(ry) * voxelSize, 0))
         }
 
         c.flush(into: sunRoot)
         sunRoot.components.set(BillboardComponent())
         parent.addChild(sunRoot)
+    }
+
+    /// Golden sparkle particles floating in the snow globe for sunny weather.
+    private static func addSunSparkles(to parent: Entity) {
+        let sparkleEntity = Entity()
+        sparkleEntity.name = "sun-sparkles"
+        sparkleEntity.position = SIMD3<Float>(0, 0.0, 0)
+
+        var emitter = ParticleEmitterComponent()
+        emitter.emitterShape = .sphere
+        emitter.emitterShapeSize = SIMD3<Float>(0.14, 0.14, 0.14)
+        emitter.mainEmitter.birthRate = 15
+        emitter.speed = 0.008
+        emitter.mainEmitter.lifeSpan = 4.0
+        emitter.mainEmitter.size = 0.002
+        emitter.mainEmitter.color = .constant(.single(UIColor(red: 1.0, green: 0.92, blue: 0.40, alpha: 0.4)))
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, 0.01, 0)
+
+        sparkleEntity.components.set(emitter)
+        parent.addChild(sparkleEntity)
     }
 
     // MARK: - Clouds (merged voxels)
