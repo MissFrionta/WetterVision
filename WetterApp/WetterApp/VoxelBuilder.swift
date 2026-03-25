@@ -218,6 +218,10 @@ struct VoxelBuilder {
 
         collector.flush(into: scene)
         scene.position.y = -0.07
+        // Rotate New York so Statue of Liberty faces the viewer on open
+        if cityName == "New York" {
+            scene.orientation = simd_quatf(angle: .pi / 4, axis: SIMD3<Float>(0, 1, 0))
+        }
         root.addChild(scene)
 
         // Weather effects based on dummy data
