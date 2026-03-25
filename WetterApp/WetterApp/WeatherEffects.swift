@@ -187,11 +187,9 @@ struct WeatherEffects {
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
         emitter.mainEmitter.birthRate = 100
-        // Near-zero initial speed so flakes don't go upward first
+        // Near-zero initial speed so flakes fall immediately (no upward drift)
         emitter.speed = 0.001
         emitter.mainEmitter.lifeSpan = 2.0
-        emitter.emissionDuration = 100
-        emitter.idleDuration = 0
 
         // Snowflakes: small, white, drifting down slowly
         emitter.mainEmitter.size = 0.003
