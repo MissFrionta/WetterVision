@@ -314,15 +314,81 @@ struct VoxelBuilder {
         // Park bench near path
         buildParkBench(collector: c, gx: 3, gz: -4)
 
-        // Fallen leaves on ground
-        let leafPositions: [(Int, Int)] = [
+        // --- Snow cover on all surfaces ---
+        let snow = UIColor(white: 0.95, alpha: 1)
+
+        // Plattenbau 1 roof: gx=-18, gz=-4, w=10, d=6, h=16 → roof at y=17, snow at y=18
+        for dx in 0..<10 { for dz in 0..<6 {
+            c.add(color: snow, x: -18 + dx, y: 18, z: -4 + dz)
+        }}
+        // Plattenbau 2 roof: gx=10, gz=4, w=10, d=6, h=12 → roof at y=13, snow at y=14
+        for dx in 0..<10 { for dz in 0..<6 {
+            c.add(color: snow, x: 10 + dx, y: 14, z: 4 + dz)
+        }}
+        // Plattenbau 3 roof: gx=-8, gz=8, w=8, d=6, h=10 → roof at y=11, snow at y=12
+        for dx in 0..<8 { for dz in 0..<6 {
+            c.add(color: snow, x: -8 + dx, y: 12, z: 8 + dz)
+        }}
+
+        // Brandenburger Tor: attic at y=17, snow at y=18 (skip quadriga area x=-2..2)
+        for x in (-9)...9 {
+            if abs(x) > 2 {
+                c.add(color: snow, x: x, y: 18, z: -14)
+                c.add(color: snow, x: x, y: 18, z: -13)
+            }
+        }
+        // Snow on quadriga top
+        for dx in (-1)...1 {
+            c.add(color: snow, x: dx, y: 20, z: -14)
+        }
+        c.add(color: snow, x: 0, y: 21, z: -14)
+
+        // Berlin Wall: pipe at y=7, snow at y=8
+        for i in 0..<10 {
+            c.add(color: snow, x: 16, y: 8, z: -8 + i)
+            c.add(color: snow, x: 17, y: 8, z: -8 + i)
+        }
+
+        // Fernsehturm: observation deck top (y=28) + sphere top (y=32)
+        for dx in (-2)...2 { for dz in (-2)...2 {
+            if abs(dx) + abs(dz) <= 2 {
+                c.add(color: snow, x: dx, y: 29, z: dz)
+            }
+        }}
+        for dx in (-1)...1 { for dz in (-1)...1 {
+            c.add(color: snow, x: dx, y: 33, z: dz)
+        }}
+
+        // Linden tree crowns: top 2 layers white
+        let treePositions = [(-14, -16), (14, -16), (-18, 6), (18, -4)]
+        for (tx, tz) in treePositions {
+            for dx in (-3)...3 { for dz in (-3)...3 {
+                let dist = dx * dx + dz * dz
+                if dist <= 9 {
+                    c.add(color: snow, x: tx + dx, y: 17, z: tz + dz)
+                }
+                if dist <= 4 {
+                    c.add(color: snow, x: tx + dx, y: 16, z: tz + dz)
+                }
+            }}
+        }
+
+        // Park bench backrest snow
+        c.add(color: snow, x: 3, y: 4, z: -4)
+        c.add(color: snow, x: 4, y: 4, z: -4)
+        c.add(color: snow, x: 5, y: 4, z: -4)
+
+        // Ground snow patches (scattered white on grass)
+        let snowPatches: [(Int, Int)] = [
             (-10, -12), (-16, -10), (12, -4), (16, -2),
             (-6, 6), (6, 8), (-8, -8), (10, -10),
             (-2, 4), (4, 2), (-14, 4), (8, -6),
+            (-4, -14), (8, -12), (-12, 2), (2, 12),
+            (0, 6), (-6, -2), (6, -6), (-10, -6),
         ]
-        for (lx, lz) in leafPositions {
-            let color = (lx + lz) % 2 == 0 ? Palette.leavesDark : Palette.leaves
-            c.add(color: color, x: lx, y: 1, z: lz)
+        for (sx, sz) in snowPatches {
+            c.add(color: snow, x: sx, y: 1, z: sz)
+            c.add(color: snow, x: sx + 1, y: 1, z: sz)
         }
     }
 

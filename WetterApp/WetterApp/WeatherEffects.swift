@@ -180,19 +180,20 @@ struct WeatherEffects {
     private static func addSnow(to parent: Entity) {
         let snowEntity = Entity()
         snowEntity.name = "snow"
-        snowEntity.position = SIMD3<Float>(0, 0.04, 0)
+        // Start at cloud level (same as rain) so snow drifts down through entire globe
+        snowEntity.position = SIMD3<Float>(0, 0.10, 0)
 
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.12, 0.01, 0.12)
-        emitter.mainEmitter.birthRate = 50
-        emitter.speed = 0.03
-        emitter.mainEmitter.lifeSpan = 2.0
+        emitter.mainEmitter.birthRate = 60
+        emitter.speed = 0.01
+        emitter.mainEmitter.lifeSpan = 3.0
 
-        // Snowflakes: small, white, drifting down slowly
+        // Snowflakes: small, white, drifting down slowly from cloud level
         emitter.mainEmitter.size = 0.003
         emitter.mainEmitter.color = .constant(.single(UIColor(white: 1.0, alpha: 0.9)))
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.05, 0)
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.08, 0)
 
         snowEntity.components.set(emitter)
         parent.addChild(snowEntity)
@@ -202,19 +203,42 @@ struct WeatherEffects {
 
     private static func addLightning(to parent: Entity, voxelSize: Float = 0.010) {
         let boltColor = UIColor(red: 1.0, green: 0.95, blue: 0.55, alpha: 1)
+        let boltBright = UIColor(red: 1.0, green: 1.0, blue: 0.80, alpha: 1)
 
         let bolt = Entity()
         bolt.name = "lightning"
-        bolt.position = SIMD3<Float>(0.02, 0.08, 0.01)
+        // Position near Statue of Liberty area, centered vertically
+        bolt.position = SIMD3<Float>(0.06, 0.0, -0.06)
 
-        let boltSize = max(voxelSize, 0.006)
+        let boltSize = max(voxelSize, 0.005)
         let c = VoxelBuilder.VoxelCollector(blockSize: boltSize)
 
+        // Full bolt from clouds (y≈20) to ground (y≈-14), zigzag pattern
         let boltPath: [(Int, Int)] = [
-            (0, 4), (0, 3), (1, 2), (0, 1), (1, 0), (0, -1), (1, -2), (0, -3)
+            // Near clouds
+            (0, 20), (0, 19), (1, 18), (1, 17), (2, 16),
+            // Upper zigzag
+            (1, 15), (0, 14), (0, 13), (-1, 12), (-1, 11),
+            // Mid section
+            (0, 10), (1, 9), (2, 8), (1, 7), (0, 6),
+            // Lower zigzag
+            (-1, 5), (-1, 4), (0, 3), (1, 2), (1, 1),
+            (0, 0), (0, -1), (-1, -2), (-1, -3), (0, -4),
+            // Near ground
+            (0, -5), (1, -6), (1, -7), (0, -8), (0, -9),
+            (-1, -10), (0, -11), (0, -12), (0, -13), (0, -14),
         ]
         for (bx, by) in boltPath {
-            c.addAt(color: boltColor, position: SIMD3(Float(bx) * voxelSize, Float(by) * voxelSize, 0))
+            let color = abs(by) < 5 ? boltBright : boltColor
+            c.addAt(color: color, position: SIMD3(Float(bx) * boltSize, Float(by) * boltSize, 0))
+        }
+
+        // Small branch splitting off mid-bolt
+        let branchPath: [(Int, Int)] = [
+            (3, 9), (4, 8), (5, 7), (5, 6),
+        ]
+        for (bx, by) in branchPath {
+            c.addAt(color: boltColor, position: SIMD3(Float(bx) * boltSize, Float(by) * boltSize, 0))
         }
 
         c.flush(into: bolt)
