@@ -613,9 +613,10 @@ struct VoxelBuilder {
 
         for (tierIdx, tier) in tiers.enumerated() {
             let hw = tier.halfW
+            let nhw = -hw
             for y in tier.startY...tier.endY {
-                for dx in -hw..<hw {
-                    for dz in -hw..<hw {
+                for dx in nhw..<hw {
+                    for dz in nhw..<hw {
                         let isExterior = dx == -hw || dx == hw - 1 || dz == -hw || dz == hw - 1
                         guard isExterior else { continue }
 
@@ -646,8 +647,9 @@ struct VoxelBuilder {
                 }
             }
             // Decorative ledge at top of each tier
-            for dx in (-hw - 1)...hw {
-                for dz in (-hw - 1)...hw {
+            let ledgeMin = -hw - 1
+            for dx in ledgeMin...hw {
+                for dz in ledgeMin...hw {
                     c.add(color: Palette.steelLight, x: gx + dx, y: tier.endY + 1, z: gz + dz)
                 }
             }
