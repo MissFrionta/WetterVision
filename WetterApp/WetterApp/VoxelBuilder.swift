@@ -548,8 +548,8 @@ struct VoxelBuilder {
         buildStatueOfLiberty(collector: c, gx: 14, gz: -14)
 
         // Central Park patch (green area with trees in corner)
-        for x in -16...-10 {
-            for z in -16...-10 {
+        for x in (-16)...(-10) {
+            for z in (-16)...(-10) {
                 let dist = sqrt(Float(x * x + z * z))
                 guard dist <= 22.5 else { continue }
                 let color = (x + z) % 2 == 0 ? Palette.grassLight : Palette.grassDark
