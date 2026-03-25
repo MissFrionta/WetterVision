@@ -327,8 +327,7 @@ struct VoxelBuilder {
         // Park bench near path
         buildParkBench(collector: c, gx: 3, gz: -4)
 
-        // --- Snow cover on all surfaces ---
-        let snow = UIColor(white: 0.95, alpha: 1)
+        // --- Snow cover on all surfaces (reuses `snow` from ground) ---
 
         // Plattenbau 1 roof: gx=-18, gz=-4, w=10, d=6, h=16 → roof at y=17, snow at y=18
         for dx in 0..<10 { for dz in 0..<6 {
