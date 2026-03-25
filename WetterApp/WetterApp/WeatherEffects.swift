@@ -14,7 +14,6 @@ struct WeatherEffects {
         switch condition {
         case .sunny:
             addSun(to: effectsRoot, voxelSize: voxelSize)
-            addSunSparkles(to: effectsRoot)
         case .cloudy:
             addClouds(to: effectsRoot, dark: false, voxelSize: voxelSize)
         case .rainy:
@@ -77,25 +76,7 @@ struct WeatherEffects {
         parent.addChild(sunRoot)
     }
 
-    /// Golden sparkle particles floating in the snow globe for sunny weather.
-    private static func addSunSparkles(to parent: Entity) {
-        let sparkleEntity = Entity()
-        sparkleEntity.name = "sun-sparkles"
-        sparkleEntity.position = SIMD3<Float>(0, 0.0, 0)
 
-        var emitter = ParticleEmitterComponent()
-        emitter.emitterShape = .sphere
-        emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.10, 0.10)
-        emitter.mainEmitter.birthRate = 15
-        emitter.speed = 0.005
-        emitter.mainEmitter.lifeSpan = 2.5
-        emitter.mainEmitter.size = 0.002
-        emitter.mainEmitter.color = .constant(.single(UIColor(red: 1.0, green: 0.92, blue: 0.40, alpha: 0.4)))
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.008, 0)
-
-        sparkleEntity.components.set(emitter)
-        parent.addChild(sparkleEntity)
-    }
 
     // MARK: - Clouds (merged voxels)
 
