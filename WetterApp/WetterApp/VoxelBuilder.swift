@@ -230,6 +230,17 @@ struct VoxelBuilder {
         let voxelSize: Float = (cityName == "Tokio" || cityName == "Berlin" || cityName == "New York") ? 0.005 : 0.010
         WeatherEffects.apply(condition: condition, to: root, voxelSize: voxelSize)
 
+        // One-time counter-scale on particle entities (default snowGlobeScale = 0.85)
+        // This prevents flickering without continuous component.set() in update loop
+        let defaultScale: Float = 0.85
+        let inv = 1.0 / defaultScale
+        if let effects = root.children.first(where: { $0.name == "weather-effects" }) {
+            let particleNames: Set<String> = ["snow", "rain", "drizzle", "wind"]
+            for child in effects.children where particleNames.contains(child.name) {
+                child.scale = SIMD3<Float>(repeating: inv)
+            }
+        }
+
         // Glass sphere
         let globeMesh = MeshResource.generateSphere(radius: 0.17)
         var glassMat = SimpleMaterial()
@@ -669,49 +680,32 @@ struct VoxelBuilder {
         buildStreetLamp(collector: c, gx: -6, gz: -4)
         buildStreetLamp(collector: c, gx: 18, gz: -2)
 
-        // --- Snow cover (only when snowy) ---
+        // --- Snow cover — thin top layer only (only when snowy) ---
         if isSnowy {
             let snowCover = UIColor(red: 0.92, green: 0.93, blue: 0.96, alpha: 1)
 
-            // Empire State roofs (3 tiers)
-            for dx in -5..<5 { for dz in -5..<5 {
-                c.add(color: snowCover, x: 0 + dx, y: 17, z: 0 + dz)
-            }}
-            for dx in -3..<3 { for dz in -3..<3 {
-                c.add(color: snowCover, x: 0 + dx, y: 31, z: 0 + dz)
-            }}
-            for dx in -2..<2 { for dz in -2..<2 {
-                c.add(color: snowCover, x: 0 + dx, y: 39, z: 0 + dz)
-            }}
+            // Empire State — just top edges of each tier
+            for dx in -5..<5 { c.add(color: snowCover, x: dx, y: 17, z: -5) }
+            for dx in -5..<5 { c.add(color: snowCover, x: dx, y: 17, z: 4) }
+            for dx in -3..<3 { c.add(color: snowCover, x: dx, y: 31, z: -3) }
+            for dx in -3..<3 { c.add(color: snowCover, x: dx, y: 31, z: 2) }
+            for dx in -2..<2 { c.add(color: snowCover, x: dx, y: 39, z: -2) }
 
-            // Skyscraper roofs
-            for dx in 0..<8 { for dz in 0..<6 {
-                c.add(color: snowCover, x: -14 + dx, y: 29, z: -6 + dz)
-            }}
-            for dx in 0..<8 { for dz in 0..<6 {
-                c.add(color: snowCover, x: 8 + dx, y: 23, z: -4 + dz)
-            }}
-            for dx in 0..<6 { for dz in 0..<8 {
-                c.add(color: snowCover, x: -12 + dx, y: 19, z: 8 + dz)
-            }}
-            for dx in 0..<10 { for dz in 0..<6 {
-                c.add(color: snowCover, x: 6 + dx, y: 15, z: 10 + dz)
-            }}
+            // Skyscraper top edges only (front + back row per roof)
+            for dx in 0..<8 { c.add(color: snowCover, x: -14 + dx, y: 29, z: -6) }
+            for dx in 0..<8 { c.add(color: snowCover, x: 8 + dx, y: 23, z: -4) }
+            for dx in 0..<6 { c.add(color: snowCover, x: -12 + dx, y: 19, z: 8) }
+            for dx in 0..<10 { c.add(color: snowCover, x: 6 + dx, y: 15, z: 10) }
 
             // Statue of Liberty crown + torch
             c.add(color: snowCover, x: 14, y: 16, z: -14)
             c.add(color: snowCover, x: 16, y: 18, z: -14)
 
-            // Linden tree crowns (Central Park)
-            let nyTreePositions = [(-14, -14), (-11, -12)]
-            for (tx, tz) in nyTreePositions {
-                for dx in (-3)...3 { for dz in (-3)...3 {
-                    let dist = dx * dx + dz * dz
-                    if dist <= 9 {
+            // Tree crowns — just the very top layer (small circle)
+            for (tx, tz) in [(-14, -14), (-11, -12)] {
+                for dx in (-2)...2 { for dz in (-2)...2 {
+                    if dx * dx + dz * dz <= 4 {
                         c.add(color: snowCover, x: tx + dx, y: 17, z: tz + dz)
-                    }
-                    if dist <= 4 {
-                        c.add(color: snowCover, x: tx + dx, y: 16, z: tz + dz)
                     }
                 }}
             }
@@ -961,42 +955,43 @@ struct VoxelBuilder {
             c.add(color: Palette.stoneDark, x: sx + 1, y: 0, z: sz)
         }
 
-        // --- Snow cover (only when snowy) ---
+        // --- Snow cover — thin top layer only (only when snowy) ---
         if isSnowy {
             let snowCover = UIColor(red: 0.92, green: 0.93, blue: 0.96, alpha: 1)
 
-            // Pagoda roofs (3 tiers) — roof extends beyond walls
-            for dx in (-9)...9 { for dz in (-9)...9 {
-                if abs(dx) + abs(dz) <= 12 {
-                    c.add(color: snowCover, x: -8 + dx, y: 10, z: -2 + dz)
+            // Pagoda — just outer edge of each tier roof
+            for dx in (-9)...9 {
+                let limit = 12 - abs(dx)
+                if limit >= 0 {
+                    c.add(color: snowCover, x: -8 + dx, y: 10, z: -2 - limit)
+                    c.add(color: snowCover, x: -8 + dx, y: 10, z: -2 + limit)
                 }
-            }}
-            for dx in (-7)...7 { for dz in (-7)...7 {
-                if abs(dx) + abs(dz) <= 9 {
-                    c.add(color: snowCover, x: -8 + dx, y: 18, z: -2 + dz)
+            }
+            for dx in (-7)...7 {
+                let limit = 9 - abs(dx)
+                if limit >= 0 {
+                    c.add(color: snowCover, x: -8 + dx, y: 18, z: -2 - limit)
+                    c.add(color: snowCover, x: -8 + dx, y: 18, z: -2 + limit)
                 }
-            }}
-            for dx in (-5)...5 { for dz in (-5)...5 {
-                if abs(dx) + abs(dz) <= 7 {
-                    c.add(color: snowCover, x: -8 + dx, y: 26, z: -2 + dz)
+            }
+            for dx in (-5)...5 {
+                let limit = 7 - abs(dx)
+                if limit >= 0 {
+                    c.add(color: snowCover, x: -8 + dx, y: 26, z: -2 - limit)
+                    c.add(color: snowCover, x: -8 + dx, y: 26, z: -2 + limit)
                 }
-            }}
+            }
 
             // Torii gate top
             for dx in (-6)...6 {
                 c.add(color: snowCover, x: 6 + dx, y: 19, z: -12)
             }
 
-            // Cherry tree crowns — top 2 layers white
-            let tokioTreePositions = [(12, -6), (-16, -14), (14, 2)]
-            for (tx, tz) in tokioTreePositions {
-                for dx in (-3)...3 { for dz in (-3)...3 {
-                    let dist = dx * dx + dz * dz
-                    if dist <= 9 {
+            // Cherry tree crowns — just the very top
+            for (tx, tz) in [(12, -6), (-16, -14), (14, 2)] {
+                for dx in (-2)...2 { for dz in (-2)...2 {
+                    if dx * dx + dz * dz <= 4 {
                         c.add(color: snowCover, x: tx + dx, y: 17, z: tz + dz)
-                    }
-                    if dist <= 4 {
-                        c.add(color: snowCover, x: tx + dx, y: 16, z: tz + dz)
                     }
                 }}
             }
