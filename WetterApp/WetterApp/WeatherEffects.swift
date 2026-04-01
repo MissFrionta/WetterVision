@@ -248,21 +248,20 @@ struct WeatherEffects {
     private static func addWind(to parent: Entity) {
         let windEntity = Entity()
         windEntity.name = "wind"
-        windEntity.position = SIMD3<Float>(0, 0.0, 0)
+        windEntity.position = SIMD3<Float>(-0.06, 0.02, 0)
 
         var emitter = ParticleEmitterComponent()
-        emitter.emitterShape = .box
-        emitter.emitterShapeSize = SIMD3<Float>(0.12, 0.20, 0.12)
-        emitter.mainEmitter.birthRate = 120
-        emitter.speed = 0.08
-        emitter.mainEmitter.lifeSpan = 0.6
+        emitter.emitterShape = .plane
+        emitter.emitterShapeSize = SIMD3<Float>(0.02, 0.14, 0.10)
+        emitter.mainEmitter.birthRate = 100
+        emitter.speed = 0.06
+        emitter.mainEmitter.lifeSpan = 0.4
 
-        // Fast streaks blown sideways across the whole globe
+        // Fast streaks blown sideways from left edge through the globe
         emitter.mainEmitter.size = 0.003
         emitter.mainEmitter.stretchFactor = 12.0
         emitter.mainEmitter.color = .constant(.single(UIColor(white: 0.80, alpha: 0.45)))
-        // Strong sideways push, minimal gravity
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0.8, -0.05, 0.2)
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0.7, -0.03, 0)
 
         windEntity.components.set(emitter)
         parent.addChild(windEntity)
