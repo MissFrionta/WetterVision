@@ -158,12 +158,25 @@ Tokio hat folgende Extras bekommen, die auch fuer andere Staedte sinnvoll waeren
 
 ---
 
-## Erweiterungen (optional, nur wenn Zeit reicht — jeweils in neuem Branch)
+## Naechste Features (geplant)
 
-- [ ] **Echte Wetter-API** (Open-Meteo oder DWD Open Data) — nur wenn alles andere fertig ist
-- [ ] **Mehr Staedte hinzufuegen** — z.B. Sydney, Kairo, Rio, Moskau
+### HOCH — als Naechstes umsetzen
+- [ ] **Echte Wetter-API (Open-Meteo)** — Explizit als optionaler Bonus in der Aufgabenstellung genannt. Open-Meteo ist kostenlos, kein API-Key noetig. REST-Call liefert Temperatur, Luftfeuchtigkeit, Wind, Wetter-Code. Schneekugel zeigt dann das echte aktuelle Wetter der Stadt. Mapping von Open-Meteo WMO-Codes auf WeatherCondition. (~2-3h)
+- [ ] **Wolken-Animation** — Wolken langsam driften lassen (leichte Position-Verschiebung ueber Zeit oder sanfte Y-Rotation). Aktuell statisch, wirkt mit Bewegung deutlich lebendiger. (~30min)
+- [ ] **Wind-Effekt auf Partikel** — Schneeflocken/Regentropfen seitlich driften lassen basierend auf Windgeschwindigkeit/Windrichtung. Einfache X/Z-Komponente in der Partikel-Acceleration. (~30min)
+
+### MITTEL — wenn Zeit reicht
+- [ ] **Erweitertes Weather-Panel** — Mehr Wetter-Infos: Vorhersage naechste Stunden/Tage, Windrichtung als Pfeil, Sonnenauf-/untergang, "Gefuehlt wie"-Temperatur. Daten aus der gleichen Open-Meteo API. (~1-2h)
+- [ ] **Tag/Nacht-Anpassung** — Himmelfarbe/Beleuchtung basierend auf aktueller Uhrzeit der Stadt. Nachts dunklerer Hintergrund, Fenster leuchten gelb, Laternen an. (~1-2h)
+- [ ] **Wetter-Icons auf Globus** — Kleine Wetter-Symbole (Sonne/Wolke/Regen) neben den Stadt-Labels auf dem Globus. (~30min-1h)
+
+### NIEDRIG — nice to have
+- [ ] **Mehr Staedte hinzufuegen** — z.B. Sydney, Kairo, Rio, Moskau (brauchen jeweils neue Voxel-Szenen, zeitintensiv)
+- [ ] **2D-Begleitfenster** — Separates SwiftUI-Window mit Einstellungen/Staedteliste
 - [ ] **Schneekugel-Widgets** — Schneekugeln als platzierbare Widgets im Raum (Shared Space / Immersive Space)
-- [ ] Weitere sinnvolle Funktionen brainstormen (z.B. Tageszeit-Wechsel, Jahreszeiten, AR-Modus)
+- [ ] **Schneekugel-Schuettel-Animation** — Physik-basiertes Aufwirbeln der Partikel
+
+### Erledigt
 - [x] ~~Verfeinerung der Voxel-Aufloesung fuer mehr Detail~~ — Tokio auf 2x umgebaut
 - [x] ~~Apple-Globus-Modell aus Reality Composer Pro~~ — Earth.usdz eingebunden
 
