@@ -69,12 +69,24 @@ struct ContentView: View {
                     sg.orientation = snowGlobeRotation
                     sg.scale = SIMD3<Float>(repeating: snowGlobeScale)
 
-                    // Counter-scale particle emitters so they stay at effective scale 1.0
-                    // This prevents flickering when the snow globe is scaled up/down
+                    // Counter-scale particle emitters to prevent flickering,
+                    // but compensate emitter area + density so coverage matches the globe
                     if let effects = sg.children.first(where: { $0.name == "weather-effects" }) {
-                        let inv = 1.0 / snowGlobeScale
+                        let s = snowGlobeScale
+                        let inv = 1.0 / s
                         for child in effects.children where child.name == "snow" || child.name == "rain" {
                             child.scale = SIMD3<Float>(repeating: inv)
+                            if var emitter = child.components[ParticleEmitterComponent.self] {
+                                // Emitter area must grow with s to compensate counter-scale
+                                emitter.emitterShapeSize = SIMD3<Float>(0.10 * s, 0.01, 0.10 * s)
+                                // birthRate scales with area (s²) to maintain particle density
+                                let baseRate: Float = child.name == "snow" ? 350 : 300
+                                emitter.mainEmitter.birthRate = baseRate * s * s
+                                // Acceleration scales with s so fall speed matches globe size
+                                let baseAccel: Float = child.name == "snow" ? -0.12 : -0.5
+                                emitter.mainEmitter.acceleration = SIMD3<Float>(0, baseAccel * s, 0)
+                                child.components.set(emitter)
+                            }
                         }
                     }
                 }
