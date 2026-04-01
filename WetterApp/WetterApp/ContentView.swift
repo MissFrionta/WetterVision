@@ -76,13 +76,14 @@ struct ContentView: View {
                         for child in effects.children where child.name == "snow" || child.name == "rain" || child.name == "drizzle" || child.name == "wind" {
                             child.scale = SIMD3<Float>(repeating: inv)
                             if var emitter = child.components[ParticleEmitterComponent.self] {
-                                let shapeH: Float = child.name == "wind" ? 0.06 : 0.01
-                                emitter.emitterShapeSize = SIMD3<Float>(0.10 * s, shapeH, 0.10 * s)
+                                let shapeW: Float = child.name == "wind" ? 0.12 : 0.10
+                                let shapeH: Float = child.name == "wind" ? 0.20 : 0.01
+                                emitter.emitterShapeSize = SIMD3<Float>(shapeW * s, shapeH * s, shapeW * s)
                                 let baseRate: Float = child.name == "snow" ? 350 : (child.name == "drizzle" ? 80 : (child.name == "wind" ? 80 : 300))
                                 emitter.mainEmitter.birthRate = baseRate * s * s
                                 // Wind needs full 3D acceleration, others only Y
                                 if child.name == "wind" {
-                                    emitter.mainEmitter.acceleration = SIMD3<Float>(0.5 * s, -0.08 * s, 0.15 * s)
+                                    emitter.mainEmitter.acceleration = SIMD3<Float>(0.8 * s, -0.05 * s, 0.2 * s)
                                 } else {
                                     let baseAccel: Float = child.name == "snow" ? -0.12 : (child.name == "drizzle" ? -0.3 : -0.5)
                                     emitter.mainEmitter.acceleration = SIMD3<Float>(0, baseAccel * s, 0)
