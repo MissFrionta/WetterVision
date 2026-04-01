@@ -230,14 +230,14 @@ struct WeatherEffects {
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
-        emitter.mainEmitter.birthRate = 150
+        emitter.mainEmitter.birthRate = 80
         emitter.speed = 0.005
         emitter.mainEmitter.lifeSpan = 1.5
 
-        emitter.mainEmitter.size = 0.002
-        emitter.mainEmitter.stretchFactor = 4.0
-        emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.55, green: 0.72, blue: 0.92, alpha: 0.5)))
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.3, 0)
+        emitter.mainEmitter.size = 0.003
+        emitter.mainEmitter.stretchFactor = 5.0
+        emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.50, green: 0.68, blue: 0.90, alpha: 0.65)))
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0.02, -0.3, 0.01)
 
         drizzleEntity.components.set(emitter)
         parent.addChild(drizzleEntity)

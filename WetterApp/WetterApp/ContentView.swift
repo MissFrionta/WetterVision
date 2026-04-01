@@ -90,7 +90,7 @@ struct ContentView: View {
                                 switch child.name {
                                 case "snow":    baseRate = 350
                                 case "rain":    baseRate = 300
-                                case "drizzle": baseRate = 150
+                                case "drizzle": baseRate = 80
                                 case "wind":    baseRate = 80
                                 default:        baseRate = 200
                                 }
@@ -101,7 +101,7 @@ struct ContentView: View {
                                 switch child.name {
                                 case "snow":    baseAccel = SIMD3<Float>(0.03, -0.08, 0.01)
                                 case "rain":    baseAccel = SIMD3<Float>(0.06, -0.5, 0.02)
-                                case "drizzle": baseAccel = SIMD3<Float>(0.02, -0.3, 0.01)
+                                case "drizzle": baseAccel = SIMD3<Float>(0.02, -0.3, 0.01)  // matches addDrizzle
                                 case "wind":    baseAccel = SIMD3<Float>(0.4, -0.1, 0.1)
                                 default:        baseAccel = SIMD3<Float>(0, -0.3, 0)
                                 }
