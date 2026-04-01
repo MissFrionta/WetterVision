@@ -90,11 +90,12 @@ struct ContentView: View {
                         }
                     }
 
-                    // Move weather panel below the scaled snow globe so they don't overlap
-                    // Base bottom = (-0.19 - 0.02) * scale = -0.21 * scale, then some padding
+                    // Position weather panel in front of snow globe, aligned at base level
                     if let panel = root.children.first(where: { $0.name == "weather-panel" }) {
-                        let panelY: Float = -0.21 * snowGlobeScale - 0.04
-                        panel.position = SIMD3<Float>(0.20, panelY, 0.18)
+                        let s = snowGlobeScale
+                        let panelY: Float = -0.19 * s  // base level of snow globe
+                        let panelZ: Float = 0.17 * s + 0.05  // in front of glass sphere
+                        panel.position = SIMD3<Float>(0.20, panelY, panelZ)
                     }
                 }
             }
@@ -270,8 +271,10 @@ struct ContentView: View {
             // Attach weather panel to scene root (not snow globe, so it doesn't rotate with it)
             if let panel = attachments.entity(for: "weather-panel") {
                 panel.name = "weather-panel"
-                let panelY: Float = -0.21 * snowGlobeScale - 0.04
-                panel.position = SIMD3<Float>(0.20, panelY, 0.18)
+                let s = snowGlobeScale
+                let panelY: Float = -0.19 * s
+                let panelZ: Float = 0.17 * s + 0.05
+                panel.position = SIMD3<Float>(0.20, panelY, panelZ)
                 panel.components.set(BillboardComponent())
                 root?.addChild(panel)
             }
