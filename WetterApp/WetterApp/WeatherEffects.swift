@@ -150,21 +150,7 @@ struct WeatherEffects {
             }
         }
 
-        let cloudRoot = Entity()
-        cloudRoot.name = "clouds"
-        c.flush(into: cloudRoot)
-        parent.addChild(cloudRoot)
-
-        // Slow drift animation — clouds rotate gently around Y axis
-        Task { @MainActor in
-            var angle: Float = 0
-            while !Task.isCancelled {
-                guard cloudRoot.parent != nil else { break }
-                try? await Task.sleep(for: .milliseconds(50))
-                angle += 0.002  // ~0.12°/frame at 20fps → full rotation in ~5 minutes
-                cloudRoot.orientation = simd_quatf(angle: angle, axis: SIMD3<Float>(0, 1, 0))
-            }
-        }
+        c.flush(into: parent)
     }
 
     // MARK: - Rain (Particle System)
