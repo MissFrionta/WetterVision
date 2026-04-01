@@ -69,48 +69,8 @@ struct ContentView: View {
                     sg.orientation = snowGlobeRotation
                     sg.scale = SIMD3<Float>(repeating: snowGlobeScale)
 
-                    // Counter-scale particle emitters to prevent flickering,
-                    // but compensate emitter area + density so coverage matches the globe
-                    // Counter-scale particle emitters to prevent flickering,
-                    // compensate emitter area + density so coverage matches the globe
-                    if let effects = sg.children.first(where: { $0.name == "weather-effects" }) {
-                        let s = snowGlobeScale
-                        let inv = 1.0 / s
-                        let particleNames: Set<String> = ["snow", "rain", "drizzle", "wind"]
-                        for child in effects.children where particleNames.contains(child.name) {
-                            child.scale = SIMD3<Float>(repeating: inv)
-                            if var emitter = child.components[ParticleEmitterComponent.self] {
-                                // Emitter area scales with s to compensate counter-scale
-                                let baseShapeW: Float = 0.10
-                                let baseShapeH: Float = child.name == "wind" ? 0.06 : 0.01
-                                emitter.emitterShapeSize = SIMD3<Float>(baseShapeW * s, baseShapeH, baseShapeW * s)
-
-                                // birthRate scales with area (s²) to maintain particle density
-                                let baseRate: Float
-                                switch child.name {
-                                case "snow":    baseRate = 350
-                                case "rain":    baseRate = 300
-                                case "drizzle": baseRate = 80
-                                case "wind":    baseRate = 80
-                                default:        baseRate = 200
-                                }
-                                emitter.mainEmitter.birthRate = baseRate * s * s
-
-                                // Acceleration scales with s so fall speed matches globe size
-                                let baseAccel: SIMD3<Float>
-                                switch child.name {
-                                case "snow":    baseAccel = SIMD3<Float>(0, -0.08, 0)
-                                case "rain":    baseAccel = SIMD3<Float>(0.06, -0.5, 0.02)
-                                case "drizzle": baseAccel = SIMD3<Float>(0.02, -0.3, 0.01)  // matches addDrizzle
-                                case "wind":    baseAccel = SIMD3<Float>(0.4, -0.1, 0.1)
-                                default:        baseAccel = SIMD3<Float>(0, -0.3, 0)
-                                }
-                                emitter.mainEmitter.acceleration = baseAccel * s
-
-                                child.components.set(emitter)
-                            }
-                        }
-                    }
+                    // NOTE: Counter-scale temporarily disabled for debugging.
+                    // If snow particles work without it, the component.set() was the problem.
 
                     // Position weather panel in front of snow globe, aligned at base level
                     if let panel = root.children.first(where: { $0.name == "weather-panel" }) {
