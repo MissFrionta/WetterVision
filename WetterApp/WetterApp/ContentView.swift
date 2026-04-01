@@ -5,6 +5,7 @@ struct ContentView: View {
 
     @State private var cities = CityData.defaultCities
     @State private var selectedCity: City?
+    @State private var weatherService = WeatherService()
 
     // Globe rotation
     @State private var globeRotation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
@@ -119,7 +120,7 @@ struct ContentView: View {
 
             if let city = selectedCity {
                 Attachment(id: "weather-panel") {
-                    WeatherPanelView(city: city)
+                    WeatherPanelView(city: city, weatherService: weatherService)
                 }
             }
         }
@@ -205,6 +206,9 @@ struct ContentView: View {
                     }
                 }
         )
+        .task {
+            await weatherService.fetchAll(cities: cities)
+        }
     }
 
     // MARK: - Helpers
@@ -258,7 +262,9 @@ struct ContentView: View {
             removeSnowGlobe(root: root)
 
             // Create new snow globe with weather condition
-            let condition = CityData.dummyWeather[city.name]?.condition ?? .cloudy
+            // Use real weather from API, fall back to dummy data
+            let weather = weatherService.weather[city.name] ?? CityData.dummyWeather[city.name]
+            let condition = weather?.condition ?? .cloudy
             let newGlobe = VoxelBuilder.buildSnowGlobe(for: city.name, condition: condition)
             newGlobe.position = SIMD3<Float>(0.20, 0.0, 0.0)
             newGlobe.scale = SIMD3<Float>(repeating: snowGlobeScale)
@@ -285,6 +291,7 @@ struct ContentView: View {
 
 struct WeatherPanelView: View {
     let city: City
+    var weatherService: WeatherService
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -296,7 +303,7 @@ struct WeatherPanelView: View {
                     .font(.headline)
             }
 
-            if let weather = CityData.dummyWeather[city.name] {
+            if let weather = weatherService.weather[city.name] ?? CityData.dummyWeather[city.name] {
                 HStack(spacing: 16) {
                     Label("\(weather.temperature)°C", systemImage: "thermometer")
                     Label(weather.condition.rawValue, systemImage: weatherIcon(weather.condition))

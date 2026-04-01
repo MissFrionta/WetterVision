@@ -35,12 +35,10 @@ struct CityData {
         City(name: "Tokio",    latitude: 35.68,  longitude: 139.69,  pinColor: UIColor(red: 0.95, green: 0.80, blue: 0.20, alpha: 1)),
     ]
 
-    /// Dummy weather for each city — keyed by city name.
+    /// Fallback weather data — used when Open-Meteo API is not reachable.
     static let dummyWeather: [String: WeatherInfo] = [
-        // --- TEST: Alle Städte auf gleiches Wetter zum Testen ---
-        "Berlin":   WeatherInfo(condition: .stormy,  temperature: 8,  humidity: 95, windSpeed: 45, description: "Gewitter"),
-        "New York": WeatherInfo(condition: .stormy,  temperature: 12, humidity: 92, windSpeed: 50, description: "Gewitter"),
-        "Tokio":    WeatherInfo(condition: .stormy,  temperature: 15, humidity: 90, windSpeed: 40, description: "Gewitter"),
-        "London":   WeatherInfo(condition: .cloudy, temperature: 10, humidity: 80, windSpeed: 25, description: "Stark bewölkt"),
+        "Berlin":   WeatherInfo(condition: .cloudy, temperature: 12, humidity: 70, windSpeed: 15, description: "Bewölkt"),
+        "New York": WeatherInfo(condition: .rainy,  temperature: 18, humidity: 80, windSpeed: 20, description: "Regnerisch"),
+        "Tokio":    WeatherInfo(condition: .sunny,  temperature: 24, humidity: 55, windSpeed: 8,  description: "Sonnig"),
     ]
 }
