@@ -193,8 +193,8 @@ struct VoxelBuilder {
 
     // MARK: - Public API
 
-    /// Build a snow globe for a specific city.
-    static func buildSnowGlobe(for cityName: String) -> Entity {
+    /// Build a snow globe for a specific city with the given weather condition.
+    static func buildSnowGlobe(for cityName: String, condition: WeatherCondition) -> Entity {
         let root = Entity()
         root.name = "snowglobe-\(cityName)"
 
@@ -207,10 +207,12 @@ struct VoxelBuilder {
             collector = VoxelCollector()
         }
 
+        let isSnowy = condition == .snowy
+
         switch cityName {
-        case "Berlin":   buildBerlinScene(collector: collector)
-        case "New York": buildNewYorkScene(collector: collector)
-        case "Tokio":    buildTokioScene(collector: collector)
+        case "Berlin":   buildBerlinScene(collector: collector, isSnowy: isSnowy)
+        case "New York": buildNewYorkScene(collector: collector, isSnowy: isSnowy)
+        case "Tokio":    buildTokioScene(collector: collector, isSnowy: isSnowy)
         case "London":   buildLondonScene(collector: collector)
         case "Paris":    buildParisScene(collector: collector)
         default:         buildGenericScene(collector: collector)
@@ -224,11 +226,9 @@ struct VoxelBuilder {
         }
         root.addChild(scene)
 
-        // Weather effects based on dummy data
+        // Weather effects based on condition
         let voxelSize: Float = (cityName == "Tokio" || cityName == "Berlin" || cityName == "New York") ? 0.005 : 0.010
-        if let weather = CityData.dummyWeather[cityName] {
-            WeatherEffects.apply(condition: weather.condition, to: root, voxelSize: voxelSize)
-        }
+        WeatherEffects.apply(condition: condition, to: root, voxelSize: voxelSize)
 
         // Glass sphere
         let globeMesh = MeshResource.generateSphere(radius: 0.17)
@@ -254,21 +254,15 @@ struct VoxelBuilder {
 
     // MARK: - Berlin: Fernsehturm + Brandenburger Tor + Plattenbauten (2x resolution, gridSize 0.005)
 
-    private static func buildBerlinScene(collector c: VoxelCollector) {
-        // Snow-covered ground (white top, dirt below)
-        let snow = UIColor(white: 0.95, alpha: 1)
-        // Slightly blue-tinted white for roof/tree snow cover — forces VoxelCollector
-        // to create a separate (smaller) mesh instead of one massive white mesh.
-        // This fixes particle flickering caused by the huge merged ground+cover mesh.
-        let snowCover = UIColor(red: 0.92, green: 0.93, blue: 0.96, alpha: 1)
-        for x in -22...22 {
-            for z in -22...22 {
-                let dist = sqrt(Float(x * x + z * z))
-                guard dist <= 22.5 else { continue }
-                c.add(color: snow, x: x, y: 0, z: z)
-                c.add(color: Palette.dirt, x: x, y: -1, z: z)
-            }
+    private static func buildBerlinScene(collector c: VoxelCollector, isSnowy: Bool) {
+        // Ground: snow-covered white when snowy, cobblestone otherwise
+        if isSnowy {
+            buildSnowGround(collector: c, radius: 22)
+        } else {
+            buildConcreteGround(collector: c, radius: 22)
         }
+        // Snow cover color (slightly blue-tinted) — separate mesh from ground to avoid flickering
+        let snowCover = UIColor(red: 0.92, green: 0.93, blue: 0.96, alpha: 1)
 
         // Fernsehturm (TV Tower) — center landmark
         buildFernsehturm(collector: c, gx: 0, gz: 0)
@@ -331,70 +325,68 @@ struct VoxelBuilder {
         // Park bench near path
         buildParkBench(collector: c, gx: 3, gz: -4)
 
-        // --- Snow cover on all surfaces (uses snowCover = separate mesh from ground) ---
+        // --- Snow cover on all surfaces (only when snowy) ---
+        if isSnowy {
+            // Plattenbau 1 roof
+            for dx in 0..<10 { for dz in 0..<6 {
+                c.add(color: snowCover, x: -18 + dx, y: 18, z: -4 + dz)
+            }}
+            // Plattenbau 2 roof
+            for dx in 0..<10 { for dz in 0..<6 {
+                c.add(color: snowCover, x: 10 + dx, y: 14, z: 4 + dz)
+            }}
+            // Plattenbau 3 roof
+            for dx in 0..<8 { for dz in 0..<6 {
+                c.add(color: snowCover, x: -8 + dx, y: 12, z: 8 + dz)
+            }}
 
-        // Plattenbau 1 roof: gx=-18, gz=-4, w=10, d=6, h=16 → roof at y=17, snow at y=18
-        for dx in 0..<10 { for dz in 0..<6 {
-            c.add(color: snowCover, x: -18 + dx, y: 18, z: -4 + dz)
-        }}
-        // Plattenbau 2 roof: gx=10, gz=4, w=10, d=6, h=12 → roof at y=13, snow at y=14
-        for dx in 0..<10 { for dz in 0..<6 {
-            c.add(color: snowCover, x: 10 + dx, y: 14, z: 4 + dz)
-        }}
-        // Plattenbau 3 roof: gx=-8, gz=8, w=8, d=6, h=10 → roof at y=11, snow at y=12
-        for dx in 0..<8 { for dz in 0..<6 {
-            c.add(color: snowCover, x: -8 + dx, y: 12, z: 8 + dz)
-        }}
-
-        // Brandenburger Tor: attic at y=17, snow at y=18 (skip quadriga area x=-2..2)
-        for x in (-9)...9 {
-            if abs(x) > 2 {
-                c.add(color: snowCover, x: x, y: 18, z: -14)
-                c.add(color: snowCover, x: x, y: 18, z: -13)
-            }
-        }
-        // Snow on quadriga top
-        for dx in (-1)...1 {
-            c.add(color: snowCover, x: dx, y: 20, z: -14)
-        }
-        c.add(color: snowCover, x: 0, y: 21, z: -14)
-
-        // Berlin Wall: pipe at y=7, snow at y=8
-        for i in 0..<10 {
-            c.add(color: snowCover, x: 16, y: 8, z: -8 + i)
-            c.add(color: snowCover, x: 17, y: 8, z: -8 + i)
-        }
-
-        // Fernsehturm: observation deck top (y=28) + sphere top (y=32)
-        for dx in (-2)...2 { for dz in (-2)...2 {
-            if abs(dx) + abs(dz) <= 2 {
-                c.add(color: snowCover, x: dx, y: 29, z: dz)
-            }
-        }}
-        for dx in (-1)...1 { for dz in (-1)...1 {
-            c.add(color: snowCover, x: dx, y: 33, z: dz)
-        }}
-
-        // Linden tree crowns: top 2 layers white
-        let treePositions = [(-14, -16), (14, -16), (-18, 6), (18, -4)]
-        for (tx, tz) in treePositions {
-            for dx in (-3)...3 { for dz in (-3)...3 {
-                let dist = dx * dx + dz * dz
-                if dist <= 9 {
-                    c.add(color: snowCover, x: tx + dx, y: 17, z: tz + dz)
+            // Brandenburger Tor attic (skip quadriga area)
+            for x in (-9)...9 {
+                if abs(x) > 2 {
+                    c.add(color: snowCover, x: x, y: 18, z: -14)
+                    c.add(color: snowCover, x: x, y: 18, z: -13)
                 }
-                if dist <= 4 {
-                    c.add(color: snowCover, x: tx + dx, y: 16, z: tz + dz)
+            }
+            for dx in (-1)...1 {
+                c.add(color: snowCover, x: dx, y: 20, z: -14)
+            }
+            c.add(color: snowCover, x: 0, y: 21, z: -14)
+
+            // Berlin Wall top
+            for i in 0..<10 {
+                c.add(color: snowCover, x: 16, y: 8, z: -8 + i)
+                c.add(color: snowCover, x: 17, y: 8, z: -8 + i)
+            }
+
+            // Fernsehturm observation deck + sphere top
+            for dx in (-2)...2 { for dz in (-2)...2 {
+                if abs(dx) + abs(dz) <= 2 {
+                    c.add(color: snowCover, x: dx, y: 29, z: dz)
                 }
             }}
+            for dx in (-1)...1 { for dz in (-1)...1 {
+                c.add(color: snowCover, x: dx, y: 33, z: dz)
+            }}
+
+            // Linden tree crowns: top 2 layers white
+            let treePositions = [(-14, -16), (14, -16), (-18, 6), (18, -4)]
+            for (tx, tz) in treePositions {
+                for dx in (-3)...3 { for dz in (-3)...3 {
+                    let dist = dx * dx + dz * dz
+                    if dist <= 9 {
+                        c.add(color: snowCover, x: tx + dx, y: 17, z: tz + dz)
+                    }
+                    if dist <= 4 {
+                        c.add(color: snowCover, x: tx + dx, y: 16, z: tz + dz)
+                    }
+                }}
+            }
+
+            // Park bench backrest
+            c.add(color: snowCover, x: 3, y: 4, z: -4)
+            c.add(color: snowCover, x: 4, y: 4, z: -4)
+            c.add(color: snowCover, x: 5, y: 4, z: -4)
         }
-
-        // Park bench backrest snow
-        c.add(color: snowCover, x: 3, y: 4, z: -4)
-        c.add(color: snowCover, x: 4, y: 4, z: -4)
-        c.add(color: snowCover, x: 5, y: 4, z: -4)
-
-        // (Ground is already fully snow-covered)
     }
 
     private static func buildFernsehturm(collector c: VoxelCollector, gx: Int, gz: Int) {
@@ -599,8 +591,12 @@ struct VoxelBuilder {
 
     // MARK: - New York: Empire State + Skyscrapers + Freiheitsstatue (2x resolution, gridSize 0.005)
 
-    private static func buildNewYorkScene(collector c: VoxelCollector) {
-        buildConcreteGround(collector: c, radius: 22)
+    private static func buildNewYorkScene(collector c: VoxelCollector, isSnowy: Bool) {
+        if isSnowy {
+            buildSnowGround(collector: c, radius: 22)
+        } else {
+            buildConcreteGround(collector: c, radius: 22)
+        }
 
         // Empire State Building (center, art deco setbacks)
         buildEmpireState(collector: c, gx: 0, gz: 0)
@@ -847,8 +843,12 @@ struct VoxelBuilder {
 
     // MARK: - Tokio: Pagode + Kirschbaum + Teich (2x resolution, gridSize 0.005)
 
-    private static func buildTokioScene(collector c: VoxelCollector) {
-        buildGrassGround(collector: c, radius: 22)
+    private static func buildTokioScene(collector c: VoxelCollector, isSnowy: Bool) {
+        if isSnowy {
+            buildSnowGround(collector: c, radius: 22)
+        } else {
+            buildGrassGround(collector: c, radius: 22)
+        }
 
         // Pagoda (main landmark, left side)
         buildPagoda(collector: c, gx: -8, gz: -2)
@@ -1279,6 +1279,18 @@ struct VoxelBuilder {
                 let color = (x + z) % 2 == 0 ? Palette.concrete : Palette.concreteDark
                 c.add(color: color, x: x, y: 0, z: z)
                 c.add(color: Palette.concreteDark, x: x, y: -1, z: z)
+            }
+        }
+    }
+
+    private static func buildSnowGround(collector c: VoxelCollector, radius: Int) {
+        let snow = UIColor(white: 0.95, alpha: 1)
+        for x in -radius...radius {
+            for z in -radius...radius {
+                let dist = sqrt(Float(x * x + z * z))
+                guard dist <= Float(radius) + 0.5 else { continue }
+                c.add(color: snow, x: x, y: 0, z: z)
+                c.add(color: Palette.dirt, x: x, y: -1, z: z)
             }
         }
     }

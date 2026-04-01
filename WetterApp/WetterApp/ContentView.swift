@@ -71,20 +71,42 @@ struct ContentView: View {
 
                     // Counter-scale particle emitters to prevent flickering,
                     // but compensate emitter area + density so coverage matches the globe
+                    // Counter-scale particle emitters to prevent flickering,
+                    // compensate emitter area + density so coverage matches the globe
                     if let effects = sg.children.first(where: { $0.name == "weather-effects" }) {
                         let s = snowGlobeScale
                         let inv = 1.0 / s
-                        for child in effects.children where child.name == "snow" || child.name == "rain" {
+                        let particleNames: Set<String> = ["snow", "rain", "drizzle", "wind"]
+                        for child in effects.children where particleNames.contains(child.name) {
                             child.scale = SIMD3<Float>(repeating: inv)
                             if var emitter = child.components[ParticleEmitterComponent.self] {
-                                // Emitter area must grow with s to compensate counter-scale
-                                emitter.emitterShapeSize = SIMD3<Float>(0.10 * s, 0.01, 0.10 * s)
+                                // Emitter area scales with s to compensate counter-scale
+                                let baseShapeW: Float = 0.10
+                                let baseShapeH: Float = child.name == "wind" ? 0.06 : 0.01
+                                emitter.emitterShapeSize = SIMD3<Float>(baseShapeW * s, baseShapeH, baseShapeW * s)
+
                                 // birthRate scales with area (s²) to maintain particle density
-                                let baseRate: Float = child.name == "snow" ? 350 : 300
+                                let baseRate: Float
+                                switch child.name {
+                                case "snow":    baseRate = 350
+                                case "rain":    baseRate = 300
+                                case "drizzle": baseRate = 150
+                                case "wind":    baseRate = 80
+                                default:        baseRate = 200
+                                }
                                 emitter.mainEmitter.birthRate = baseRate * s * s
+
                                 // Acceleration scales with s so fall speed matches globe size
-                                let baseAccel: Float = child.name == "snow" ? -0.12 : -0.5
-                                emitter.mainEmitter.acceleration = SIMD3<Float>(0, baseAccel * s, 0)
+                                let baseAccel: SIMD3<Float>
+                                switch child.name {
+                                case "snow":    baseAccel = SIMD3<Float>(0, -0.08, 0)
+                                case "rain":    baseAccel = SIMD3<Float>(0, -0.5, 0)
+                                case "drizzle": baseAccel = SIMD3<Float>(0, -0.3, 0)
+                                case "wind":    baseAccel = SIMD3<Float>(0.4, -0.1, 0.1)
+                                default:        baseAccel = SIMD3<Float>(0, -0.3, 0)
+                                }
+                                emitter.mainEmitter.acceleration = baseAccel * s
+
                                 child.components.set(emitter)
                             }
                         }
@@ -261,8 +283,9 @@ struct ContentView: View {
             // Remove any existing snow globe
             removeSnowGlobe(root: root)
 
-            // Create new snow globe
-            let newGlobe = VoxelBuilder.buildSnowGlobe(for: city.name)
+            // Create new snow globe with weather condition
+            let condition = CityData.dummyWeather[city.name]?.condition ?? .cloudy
+            let newGlobe = VoxelBuilder.buildSnowGlobe(for: city.name, condition: condition)
             newGlobe.position = SIMD3<Float>(0.20, 0.0, 0.0)
             newGlobe.scale = SIMD3<Float>(repeating: snowGlobeScale)
 
@@ -326,11 +349,13 @@ struct WeatherPanelView: View {
 
     private func weatherIcon(_ condition: WeatherCondition) -> String {
         switch condition {
-        case .sunny:  return "sun.max.fill"
-        case .cloudy: return "cloud.fill"
-        case .rainy:  return "cloud.rain.fill"
-        case .snowy:  return "cloud.snow.fill"
-        case .stormy: return "cloud.bolt.fill"
+        case .sunny:   return "sun.max.fill"
+        case .cloudy:  return "cloud.fill"
+        case .drizzle: return "cloud.drizzle.fill"
+        case .rainy:   return "cloud.rain.fill"
+        case .snowy:   return "cloud.snow.fill"
+        case .windy:   return "wind"
+        case .stormy:  return "cloud.bolt.fill"
         }
     }
 }

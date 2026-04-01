@@ -16,12 +16,18 @@ struct WeatherEffects {
             addSun(to: effectsRoot, voxelSize: voxelSize)
         case .cloudy:
             addClouds(to: effectsRoot, dark: false, voxelSize: voxelSize)
+        case .drizzle:
+            addClouds(to: effectsRoot, dark: false, voxelSize: voxelSize)
+            addDrizzle(to: effectsRoot)
         case .rainy:
             addClouds(to: effectsRoot, dark: true, voxelSize: voxelSize)
             addRain(to: effectsRoot)
         case .snowy:
             addClouds(to: effectsRoot, dark: false, voxelSize: voxelSize)
             addSnow(to: effectsRoot)
+        case .windy:
+            addClouds(to: effectsRoot, dark: false, voxelSize: voxelSize)
+            addWind(to: effectsRoot)
         case .stormy:
             addClouds(to: effectsRoot, dark: true, voxelSize: voxelSize)
             addRain(to: effectsRoot)
@@ -198,6 +204,54 @@ struct WeatherEffects {
 
         snowEntity.components.set(emitter)
         parent.addChild(snowEntity)
+    }
+
+    // MARK: - Drizzle (Particle System — light, slow rain)
+
+    private static func addDrizzle(to parent: Entity) {
+        let drizzleEntity = Entity()
+        drizzleEntity.name = "drizzle"
+        drizzleEntity.position = SIMD3<Float>(0, 0.10, 0)
+
+        var emitter = ParticleEmitterComponent()
+        emitter.emitterShape = .plane
+        emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
+        emitter.mainEmitter.birthRate = 150
+        emitter.speed = 0.005
+        emitter.mainEmitter.lifeSpan = 1.5
+
+        emitter.mainEmitter.size = 0.002
+        emitter.mainEmitter.stretchFactor = 4.0
+        emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.55, green: 0.72, blue: 0.92, alpha: 0.5)))
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.3, 0)
+
+        drizzleEntity.components.set(emitter)
+        parent.addChild(drizzleEntity)
+    }
+
+    // MARK: - Wind (Particle System — sideways gusts, no lightning)
+
+    private static func addWind(to parent: Entity) {
+        let windEntity = Entity()
+        windEntity.name = "wind"
+        windEntity.position = SIMD3<Float>(0, 0.06, 0)
+
+        var emitter = ParticleEmitterComponent()
+        emitter.emitterShape = .plane
+        emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.06, 0.10)
+        emitter.mainEmitter.birthRate = 80
+        emitter.speed = 0.02
+        emitter.mainEmitter.lifeSpan = 1.0
+
+        // Small, faint streaks blown sideways
+        emitter.mainEmitter.size = 0.002
+        emitter.mainEmitter.stretchFactor = 6.0
+        emitter.mainEmitter.color = .constant(.single(UIColor(white: 0.85, alpha: 0.3)))
+        // Strong sideways push (X), slight downward pull
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0.4, -0.1, 0.1)
+
+        windEntity.components.set(emitter)
+        parent.addChild(windEntity)
     }
 
     // MARK: - Lightning (merged voxels)

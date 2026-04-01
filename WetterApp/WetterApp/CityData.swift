@@ -19,11 +19,13 @@ struct WeatherInfo {
 }
 
 enum WeatherCondition: String, CaseIterable {
-    case sunny = "Sonnig"
-    case cloudy = "Bewölkt"
-    case rainy = "Regnerisch"
-    case snowy = "Schnee"
-    case stormy = "Gewitter"
+    case sunny   = "Sonnig"
+    case cloudy  = "Bewölkt"
+    case drizzle = "Nieselregen"
+    case rainy   = "Regnerisch"
+    case snowy   = "Schnee"
+    case windy   = "Windig"
+    case stormy  = "Gewitter"
 }
 
 /// Central data source for cities and weather.
