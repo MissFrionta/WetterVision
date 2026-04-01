@@ -185,15 +185,16 @@ struct WeatherEffects {
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
-        // Higher birthRate than before (was 200) — compensates for density loss at larger scales
         emitter.mainEmitter.birthRate = 350
-        emitter.speed = 0.01
-        emitter.mainEmitter.lifeSpan = 0.95
+        emitter.speed = 0.005
+        // Longer lifeSpan for slow drift from clouds to ground
+        emitter.mainEmitter.lifeSpan = 2.5
 
-        // Larger particles (was 0.003) with subtle blue tint for visibility against white ground
+        // Larger particles with subtle blue tint for visibility against white ground
         emitter.mainEmitter.size = 0.005
         emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.90, green: 0.93, blue: 1.0, alpha: 0.85)))
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.4, 0)
+        // Gentle gravity — snowflakes drift slowly, not fall like rain
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.12, 0)
 
         snowEntity.components.set(emitter)
         parent.addChild(snowEntity)

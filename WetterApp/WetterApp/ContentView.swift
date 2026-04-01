@@ -68,6 +68,15 @@ struct ContentView: View {
                 if let sg = root.children.first(where: { $0.name.hasPrefix("snowglobe-") }) {
                     sg.orientation = snowGlobeRotation
                     sg.scale = SIMD3<Float>(repeating: snowGlobeScale)
+
+                    // Counter-scale particle emitters so they stay at effective scale 1.0
+                    // This prevents flickering when the snow globe is scaled up/down
+                    if let effects = sg.children.first(where: { $0.name == "weather-effects" }) {
+                        let inv = 1.0 / snowGlobeScale
+                        for child in effects.children where child.name == "snow" || child.name == "rain" {
+                            child.scale = SIMD3<Float>(repeating: inv)
+                        }
+                    }
                 }
             }
         } attachments: {
