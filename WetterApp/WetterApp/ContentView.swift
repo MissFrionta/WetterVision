@@ -187,10 +187,10 @@ struct ContentView: View {
                     let magnification = Float(value.magnification)
                     if isDragOnSnowGlobe(value.entity) {
                         let newScale = snowGlobePinchStart * magnification
-                        snowGlobeScale = min(max(newScale, 0.4), 1.5)
+                        snowGlobeScale = min(max(newScale, 0.4), 1.2)
                     } else {
                         let newScale = globePinchStart * magnification
-                        globeScale = min(max(newScale, 0.5), 2.0)
+                        globeScale = min(max(newScale, 0.5), 1.5)
                     }
                 }
                 .onEnded { value in
