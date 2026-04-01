@@ -50,7 +50,7 @@ Stand: 2026-03-18
 - [ ] **Farbwechsel-Bug beim Drehen** — Voxels mit Checkerboard-Farbmuster (z.B. Teich, Gras) aendern ihre sichtbare Farbe, wenn die Schneekugel gedreht wird. Ursache: benachbarte Voxels verschiedener Farben zeigen je nach Blickwinkel verschiedene Seiten. Workaround: einheitliche Farbe verwenden (wie beim Teichrand gemacht). Fuer Gras/Boden tolerierbar.
 
 ### Niedrig (nice to have)
-- [ ] **Skalierungs-Begrenzung** — Globus und Schneekugel koennen sich beim Skalieren gegenseitig verdecken. Scale-Limits muessen so angepasst werden, dass beide nebeneinander sichtbar bleiben
+- [x] ~~**Skalierungs-Begrenzung**~~ — GEFIXT (2026-04-01). Scale-Limits angepasst (Globus max 1.5x, Schneekugel max 1.2x). Weather-Panel positioniert sich dynamisch vor der Schneekugel (statt darunter), verschwindet nicht mehr im Boden.
 
 ---
 
@@ -298,3 +298,7 @@ Referenz-Commit mit funktionierenden Gesten: **f4937e1**
   - Partikel optimiert: groesser, blauer Stich, sanftes Driften
 - [x] **Regen-Reichweite** — lifeSpan erhoeht (0.95→1.15), Tropfen erreichen den Boden
 - [x] **Schneefall-Physik** — deutlich langsamer, realistisches Flocken-Driften statt Regen-Geschwindigkeit
+- [x] **Skalierungs-Begrenzung gefixt**:
+  - Scale-Limits: Globus max 2.0→1.5x, Schneekugel max 1.5→1.2x (kein Overlap mehr)
+  - Weather-Panel dynamisch vor Schneekugel positioniert (y=Basis-Hoehe, z=vor Glaskugel)
+  - Panel verschwindet nicht mehr im Volume-Boden bei grosser Skalierung
