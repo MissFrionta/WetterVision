@@ -209,6 +209,7 @@ Referenz-Commit mit funktionierenden Gesten: **f4937e1**
 - [x] TUTORIAL.md (Setup-Anleitung)
 - [ ] **TUTORIAL.md aktualisieren** — Beschreibt noch die alte Diorama-Architektur (WetterVision v1), muss auf WetterApp-Projekt aktualisiert werden
 - [ ] Kurze schriftliche Doku fuer Abgabe (gerne stichpunktartig laut Aufgabenstellung)
+- [ ] **Projektverzeichnis aufraeumen** — Alte Prototyp-Projekte (WetterVision v1, Diorama etc.) aus dem Repository entfernen. Nur WetterApp soll im Repo bleiben. .gitignore fuer Xcode-Userdaten (.DS_Store, xcuserstate, xcbkptlist) hinzufuegen.
 
 ---
 
