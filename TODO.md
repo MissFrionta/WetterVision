@@ -160,8 +160,9 @@ Tokio hat folgende Extras bekommen, die auch fuer andere Staedte sinnvoll waeren
 
 ## Naechste Features (geplant)
 
-### Erledigt (Session 2026-04-01, Branch feature/dynamic-weather)
+### Erledigt (Session 2026-04-01, in master gemerged)
 - [x] ~~**Echte Wetter-API (Open-Meteo)**~~ — WeatherService.swift: REST-Call an Open-Meteo, WMO-Code-Mapping, 10-Min-Cache, Fallback auf Dummy-Daten. Auf AVP bestaetigt.
+- [x] ~~**7-Tage-Vorhersage mit Swipe-Navigation**~~ — Swipe im Weather-Panel wechselt zwischen Heute/Morgen/Uebermorgen/Wochentage. Schneekugel zeigt Wetter des gewaehlten Tages. Punkt-Indikatoren + Pfeil-Hinweise.
 - [x] ~~**Dynamisches Wetter fuer alle Staedte**~~ — Jede Stadt kann jedes Wetter haben. Boden wechselt (Schnee/Gras/Beton), Schneedecke nur bei .snowy. buildSnowGlobe() bekommt condition-Parameter.
 - [x] ~~**Nieselregen (.drizzle)**~~ — Feiner, langsamer Regen mit hellen Wolken. Auf AVP bestaetigt.
 - [x] ~~**Wolken-Animation**~~ — Langsame Y-Rotation (200ms Update-Intervall). Auf AVP bestaetigt.
@@ -332,3 +333,14 @@ Referenz-Commit mit funktionierenden Gesten: **f4937e1**
   - ContentView: .task{} laedt Wetter beim App-Start
   - WeatherPanelView zeigt echte API-Daten
 - [x] **Alle 6 Wetter-Szenarien getestet** auf echter AVP: sunny, cloudy, drizzle, rainy, snowy, stormy
+- [x] **7-Tage-Vorhersage mit Swipe-Navigation** (auf AVP bestaetigt):
+  - Open-Meteo daily API: weather_code, temperature_2m_max/min, wind_speed_10m_max
+  - DayForecast Struct (date, condition, tempHigh, tempLow, windSpeed)
+  - WeatherPanelView: Swipe links/rechts wechselt Tage (DragGesture minimumDistance 20)
+  - Tagesanzeige: "Heute", "Morgen", "Uebermorgen", dann deutsche Wochentage
+  - Punkt-Indikatoren (7 Punkte) + Pfeil-Hinweise (< >)
+  - Schneekugel wird bei Tag-Wechsel neu gebaut (Day-Index im Entity-Namen)
+  - Heute: Temperatur + Condition + Luftfeuchtigkeit + Wind
+  - Forecast: Temperatur High/Low + Condition (kein Wind/Humidity — API liefert nur daily Aggregat)
+  - Stadtwechsel setzt auf "Heute" zurueck
+- [x] **Feature-Branch feature/dynamic-weather in master gemerged**
