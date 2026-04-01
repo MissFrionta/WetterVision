@@ -363,7 +363,7 @@ struct WeatherPanelView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             } else if selectedDay < forecasts.count {
-                // Forecast day: show high/low + condition + wind
+                // Forecast day: show high/low + condition
                 let day = forecasts[selectedDay]
                 HStack(spacing: 12) {
                     Label("\(day.tempHigh)°/\(day.tempLow)°", systemImage: "thermometer")
@@ -372,12 +372,6 @@ struct WeatherPanelView: View {
                 .font(.subheadline)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-
-                HStack(spacing: 16) {
-                    Label("\(day.windSpeed) km/h", systemImage: "wind")
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
             }
 
             // Dot indicators
