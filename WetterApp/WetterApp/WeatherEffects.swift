@@ -178,8 +178,6 @@ struct WeatherEffects {
     // MARK: - Snow (Particle System)
 
     private static func addSnow(to parent: Entity) {
-        // Identical structure to addRain (which works flawlessly),
-        // only differences: white color, no stretch, lower birthRate
         let snowEntity = Entity()
         snowEntity.name = "snow"
         snowEntity.position = SIMD3<Float>(0, 0.10, 0)
@@ -187,13 +185,15 @@ struct WeatherEffects {
         var emitter = ParticleEmitterComponent()
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
-        emitter.mainEmitter.birthRate = 200
+        // Higher birthRate than before (was 200) — compensates for density loss at larger scales
+        emitter.mainEmitter.birthRate = 350
         emitter.speed = 0.01
         emitter.mainEmitter.lifeSpan = 0.95
 
-        emitter.mainEmitter.size = 0.003
-        emitter.mainEmitter.color = .constant(.single(UIColor(white: 1.0, alpha: 0.9)))
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.5, 0)
+        // Larger particles (was 0.003) with subtle blue tint for visibility against white ground
+        emitter.mainEmitter.size = 0.005
+        emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.90, green: 0.93, blue: 1.0, alpha: 0.85)))
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.4, 0)
 
         snowEntity.components.set(emitter)
         parent.addChild(snowEntity)

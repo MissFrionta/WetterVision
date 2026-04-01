@@ -44,7 +44,7 @@ Stand: 2026-03-18
 ## Bekannte Bugs / Offene Probleme
 
 ### HOCH (muss gefixt werden)
-- [ ] **Schnee-Partikel flackern in Berlin** — Schneepartikel erscheinen und verschwinden periodisch (Flickering). Problem ist Berlin-spezifisch, NICHT partikel-spezifisch. Regen in New York mit identischen Emitter-Parametern funktioniert einwandfrei. Details siehe unten.
+- [ ] **Schnee-Partikel flackern in Berlin** — Fix implementiert (2026-04-01), muss auf AVP getestet werden. Änderungen: (1) Weißes Mega-Mesh aufgeteilt — Schneedecke auf Dächern/Bäumen nutzt jetzt leicht bläuliches Weiß (snowCover), erzwingt separates Mesh vom Boden-Schnee. (2) Partikel-Parameter optimiert: größer (0.005 statt 0.003), höhere birthRate (350 statt 200), dezenter Blau-Stich, langsamere Beschleunigung (-0.4 statt -0.5). Falls Flickering weiterhin besteht → nächster Schritt: Partikel außerhalb der Schneekugel-Hierarchie platzieren.
 
 ### Mittel (sollte gefixt werden)
 - [ ] **Farbwechsel-Bug beim Drehen** — Voxels mit Checkerboard-Farbmuster (z.B. Teich, Gras) aendern ihre sichtbare Farbe, wenn die Schneekugel gedreht wird. Ursache: benachbarte Voxels verschiedener Farben zeigen je nach Blickwinkel verschiedene Seiten. Workaround: einheitliche Farbe verwenden (wie beim Teichrand gemacht). Fuer Gras/Boden tolerierbar.

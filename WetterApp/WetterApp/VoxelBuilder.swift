@@ -257,6 +257,10 @@ struct VoxelBuilder {
     private static func buildBerlinScene(collector c: VoxelCollector) {
         // Snow-covered ground (white top, dirt below)
         let snow = UIColor(white: 0.95, alpha: 1)
+        // Slightly blue-tinted white for roof/tree snow cover — forces VoxelCollector
+        // to create a separate (smaller) mesh instead of one massive white mesh.
+        // This fixes particle flickering caused by the huge merged ground+cover mesh.
+        let snowCover = UIColor(red: 0.92, green: 0.93, blue: 0.96, alpha: 1)
         for x in -22...22 {
             for z in -22...22 {
                 let dist = sqrt(Float(x * x + z * z))
@@ -327,48 +331,48 @@ struct VoxelBuilder {
         // Park bench near path
         buildParkBench(collector: c, gx: 3, gz: -4)
 
-        // --- Snow cover on all surfaces (reuses `snow` from ground) ---
+        // --- Snow cover on all surfaces (uses snowCover = separate mesh from ground) ---
 
         // Plattenbau 1 roof: gx=-18, gz=-4, w=10, d=6, h=16 → roof at y=17, snow at y=18
         for dx in 0..<10 { for dz in 0..<6 {
-            c.add(color: snow, x: -18 + dx, y: 18, z: -4 + dz)
+            c.add(color: snowCover, x: -18 + dx, y: 18, z: -4 + dz)
         }}
         // Plattenbau 2 roof: gx=10, gz=4, w=10, d=6, h=12 → roof at y=13, snow at y=14
         for dx in 0..<10 { for dz in 0..<6 {
-            c.add(color: snow, x: 10 + dx, y: 14, z: 4 + dz)
+            c.add(color: snowCover, x: 10 + dx, y: 14, z: 4 + dz)
         }}
         // Plattenbau 3 roof: gx=-8, gz=8, w=8, d=6, h=10 → roof at y=11, snow at y=12
         for dx in 0..<8 { for dz in 0..<6 {
-            c.add(color: snow, x: -8 + dx, y: 12, z: 8 + dz)
+            c.add(color: snowCover, x: -8 + dx, y: 12, z: 8 + dz)
         }}
 
         // Brandenburger Tor: attic at y=17, snow at y=18 (skip quadriga area x=-2..2)
         for x in (-9)...9 {
             if abs(x) > 2 {
-                c.add(color: snow, x: x, y: 18, z: -14)
-                c.add(color: snow, x: x, y: 18, z: -13)
+                c.add(color: snowCover, x: x, y: 18, z: -14)
+                c.add(color: snowCover, x: x, y: 18, z: -13)
             }
         }
         // Snow on quadriga top
         for dx in (-1)...1 {
-            c.add(color: snow, x: dx, y: 20, z: -14)
+            c.add(color: snowCover, x: dx, y: 20, z: -14)
         }
-        c.add(color: snow, x: 0, y: 21, z: -14)
+        c.add(color: snowCover, x: 0, y: 21, z: -14)
 
         // Berlin Wall: pipe at y=7, snow at y=8
         for i in 0..<10 {
-            c.add(color: snow, x: 16, y: 8, z: -8 + i)
-            c.add(color: snow, x: 17, y: 8, z: -8 + i)
+            c.add(color: snowCover, x: 16, y: 8, z: -8 + i)
+            c.add(color: snowCover, x: 17, y: 8, z: -8 + i)
         }
 
         // Fernsehturm: observation deck top (y=28) + sphere top (y=32)
         for dx in (-2)...2 { for dz in (-2)...2 {
             if abs(dx) + abs(dz) <= 2 {
-                c.add(color: snow, x: dx, y: 29, z: dz)
+                c.add(color: snowCover, x: dx, y: 29, z: dz)
             }
         }}
         for dx in (-1)...1 { for dz in (-1)...1 {
-            c.add(color: snow, x: dx, y: 33, z: dz)
+            c.add(color: snowCover, x: dx, y: 33, z: dz)
         }}
 
         // Linden tree crowns: top 2 layers white
@@ -377,18 +381,18 @@ struct VoxelBuilder {
             for dx in (-3)...3 { for dz in (-3)...3 {
                 let dist = dx * dx + dz * dz
                 if dist <= 9 {
-                    c.add(color: snow, x: tx + dx, y: 17, z: tz + dz)
+                    c.add(color: snowCover, x: tx + dx, y: 17, z: tz + dz)
                 }
                 if dist <= 4 {
-                    c.add(color: snow, x: tx + dx, y: 16, z: tz + dz)
+                    c.add(color: snowCover, x: tx + dx, y: 16, z: tz + dz)
                 }
             }}
         }
 
         // Park bench backrest snow
-        c.add(color: snow, x: 3, y: 4, z: -4)
-        c.add(color: snow, x: 4, y: 4, z: -4)
-        c.add(color: snow, x: 5, y: 4, z: -4)
+        c.add(color: snowCover, x: 3, y: 4, z: -4)
+        c.add(color: snowCover, x: 4, y: 4, z: -4)
+        c.add(color: snowCover, x: 5, y: 4, z: -4)
 
         // (Ground is already fully snow-covered)
     }
