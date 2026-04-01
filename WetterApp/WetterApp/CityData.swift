@@ -24,7 +24,6 @@ enum WeatherCondition: String, CaseIterable {
     case drizzle = "Nieselregen"
     case rainy   = "Regnerisch"
     case snowy   = "Schnee"
-    case windy   = "Windig"
     case stormy  = "Gewitter"
 }
 
@@ -39,9 +38,9 @@ struct CityData {
     /// Dummy weather for each city — keyed by city name.
     static let dummyWeather: [String: WeatherInfo] = [
         // --- TEST: Alle Städte auf gleiches Wetter zum Testen ---
-        "Berlin":   WeatherInfo(condition: .windy,   temperature: 10, humidity: 50, windSpeed: 55, description: "Windig"),
-        "New York": WeatherInfo(condition: .windy,   temperature: 12, humidity: 45, windSpeed: 60, description: "Windig"),
-        "Tokio":    WeatherInfo(condition: .windy,   temperature: 16, humidity: 55, windSpeed: 50, description: "Windig"),
+        "Berlin":   WeatherInfo(condition: .stormy,  temperature: 8,  humidity: 95, windSpeed: 45, description: "Gewitter"),
+        "New York": WeatherInfo(condition: .stormy,  temperature: 12, humidity: 92, windSpeed: 50, description: "Gewitter"),
+        "Tokio":    WeatherInfo(condition: .stormy,  temperature: 15, humidity: 90, windSpeed: 40, description: "Gewitter"),
         "London":   WeatherInfo(condition: .cloudy, temperature: 10, humidity: 80, windSpeed: 25, description: "Stark bewölkt"),
     ]
 }

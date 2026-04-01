@@ -73,20 +73,14 @@ struct ContentView: View {
                     if let effects = sg.children.first(where: { $0.name == "weather-effects" }) {
                         let s = snowGlobeScale
                         let inv = 1.0 / s
-                        for child in effects.children where child.name == "snow" || child.name == "rain" || child.name == "drizzle" || child.name == "wind" {
+                        for child in effects.children where child.name == "snow" || child.name == "rain" || child.name == "drizzle" {
                             child.scale = SIMD3<Float>(repeating: inv)
                             if var emitter = child.components[ParticleEmitterComponent.self] {
-                                let shapeH: Float = child.name == "wind" ? 0.14 : 0.01
-                                emitter.emitterShapeSize = SIMD3<Float>(0.10 * s, shapeH * s, 0.10 * s)
-                                let baseRate: Float = child.name == "snow" ? 350 : (child.name == "drizzle" ? 80 : (child.name == "wind" ? 80 : 300))
+                                emitter.emitterShapeSize = SIMD3<Float>(0.10 * s, 0.01, 0.10 * s)
+                                let baseRate: Float = child.name == "snow" ? 350 : (child.name == "drizzle" ? 80 : 300)
                                 emitter.mainEmitter.birthRate = baseRate * s * s
-                                // Wind needs full 3D acceleration, others only Y
-                                if child.name == "wind" {
-                                    emitter.mainEmitter.acceleration = SIMD3<Float>(0.7 * s, -0.03 * s, 0)
-                                } else {
-                                    let baseAccel: Float = child.name == "snow" ? -0.12 : (child.name == "drizzle" ? -0.3 : -0.5)
-                                    emitter.mainEmitter.acceleration = SIMD3<Float>(0, baseAccel * s, 0)
-                                }
+                                let baseAccel: Float = child.name == "snow" ? -0.12 : (child.name == "drizzle" ? -0.3 : -0.5)
+                                emitter.mainEmitter.acceleration = SIMD3<Float>(0, baseAccel * s, 0)
                                 child.components.set(emitter)
                             }
                         }
@@ -334,7 +328,6 @@ struct WeatherPanelView: View {
         case .drizzle: return "cloud.drizzle.fill"
         case .rainy:   return "cloud.rain.fill"
         case .snowy:   return "cloud.snow.fill"
-        case .windy:   return "wind"
         case .stormy:  return "cloud.bolt.fill"
         }
     }

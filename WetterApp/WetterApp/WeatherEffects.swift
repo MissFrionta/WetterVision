@@ -25,9 +25,6 @@ struct WeatherEffects {
         case .snowy:
             addClouds(to: effectsRoot, dark: false, voxelSize: voxelSize)
             addSnow(to: effectsRoot)
-        case .windy:
-            addClouds(to: effectsRoot, dark: false, voxelSize: voxelSize)
-            addWind(to: effectsRoot)
         case .stormy:
             addClouds(to: effectsRoot, dark: true, voxelSize: voxelSize)
             addRain(to: effectsRoot)
@@ -241,30 +238,6 @@ struct WeatherEffects {
 
         drizzleEntity.components.set(emitter)
         parent.addChild(drizzleEntity)
-    }
-
-    // MARK: - Wind (Particle System — sideways gusts, no lightning)
-
-    private static func addWind(to parent: Entity) {
-        let windEntity = Entity()
-        windEntity.name = "wind"
-        windEntity.position = SIMD3<Float>(-0.06, 0.02, 0)
-
-        var emitter = ParticleEmitterComponent()
-        emitter.emitterShape = .plane
-        emitter.emitterShapeSize = SIMD3<Float>(0.02, 0.14, 0.10)
-        emitter.mainEmitter.birthRate = 100
-        emitter.speed = 0.06
-        emitter.mainEmitter.lifeSpan = 0.4
-
-        // Dark, long horizontal streaks blown across the globe
-        emitter.mainEmitter.size = 0.003
-        emitter.mainEmitter.stretchFactor = 20.0
-        emitter.mainEmitter.color = .constant(.single(UIColor(white: 0.55, alpha: 0.6)))
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0.7, -0.03, 0)
-
-        windEntity.components.set(emitter)
-        parent.addChild(windEntity)
     }
 
     // MARK: - Lightning (merged voxels)
