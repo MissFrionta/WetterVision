@@ -333,14 +333,14 @@ struct WeatherPanelView: View {
             HStack {
                 Text(selectedDay > 0 ? "‹" : " ")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(selectedDay > 0 ? .primary : .clear)
+                    .opacity(selectedDay > 0 ? 1 : 0)
                 Spacer()
                 Text(dayLabel(for: selectedDay))
                     .font(.system(size: 12, weight: .semibold))
                 Spacer()
                 Text(selectedDay < maxDays - 1 ? "›" : " ")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(selectedDay < maxDays - 1 ? .primary : .clear)
+                    .opacity(selectedDay < maxDays - 1 ? 1 : 0)
             }
 
             // Weather info for selected day
