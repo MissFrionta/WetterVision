@@ -257,10 +257,10 @@ struct WeatherEffects {
         emitter.speed = 0.06
         emitter.mainEmitter.lifeSpan = 0.4
 
-        // Fast streaks blown sideways from left edge through the globe
+        // Dark, long horizontal streaks blown across the globe
         emitter.mainEmitter.size = 0.003
-        emitter.mainEmitter.stretchFactor = 12.0
-        emitter.mainEmitter.color = .constant(.single(UIColor(white: 0.80, alpha: 0.45)))
+        emitter.mainEmitter.stretchFactor = 20.0
+        emitter.mainEmitter.color = .constant(.single(UIColor(white: 0.55, alpha: 0.6)))
         emitter.mainEmitter.acceleration = SIMD3<Float>(0.7, -0.03, 0)
 
         windEntity.components.set(emitter)
