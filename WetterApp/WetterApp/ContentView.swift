@@ -69,8 +69,22 @@ struct ContentView: View {
                     sg.orientation = snowGlobeRotation
                     sg.scale = SIMD3<Float>(repeating: snowGlobeScale)
 
-                    // NOTE: Counter-scale temporarily disabled for debugging.
-                    // If snow particles work without it, the component.set() was the problem.
+                    // Counter-scale particle emitters — same approach as master (confirmed working)
+                    if let effects = sg.children.first(where: { $0.name == "weather-effects" }) {
+                        let s = snowGlobeScale
+                        let inv = 1.0 / s
+                        for child in effects.children where child.name == "snow" || child.name == "rain" || child.name == "drizzle" || child.name == "wind" {
+                            child.scale = SIMD3<Float>(repeating: inv)
+                            if var emitter = child.components[ParticleEmitterComponent.self] {
+                                emitter.emitterShapeSize = SIMD3<Float>(0.10 * s, 0.01, 0.10 * s)
+                                let baseRate: Float = child.name == "snow" ? 350 : (child.name == "drizzle" ? 80 : (child.name == "wind" ? 80 : 300))
+                                emitter.mainEmitter.birthRate = baseRate * s * s
+                                let baseAccel: Float = child.name == "snow" ? -0.12 : (child.name == "drizzle" ? -0.3 : (child.name == "wind" ? -0.1 : -0.5))
+                                emitter.mainEmitter.acceleration = SIMD3<Float>(0, baseAccel * s, 0)
+                                child.components.set(emitter)
+                            }
+                        }
+                    }
 
                     // Position weather panel in front of snow globe, aligned at base level
                     if let panel = root.children.first(where: { $0.name == "weather-panel" }) {

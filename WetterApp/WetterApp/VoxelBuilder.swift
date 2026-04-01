@@ -230,17 +230,6 @@ struct VoxelBuilder {
         let voxelSize: Float = (cityName == "Tokio" || cityName == "Berlin" || cityName == "New York") ? 0.005 : 0.010
         WeatherEffects.apply(condition: condition, to: root, voxelSize: voxelSize)
 
-        // One-time counter-scale on particle entities (default snowGlobeScale = 0.85)
-        // This prevents flickering without continuous component.set() in update loop
-        let defaultScale: Float = 0.85
-        let inv = 1.0 / defaultScale
-        if let effects = root.children.first(where: { $0.name == "weather-effects" }) {
-            let particleNames: Set<String> = ["snow", "rain", "drizzle", "wind"]
-            for child in effects.children where particleNames.contains(child.name) {
-                child.scale = SIMD3<Float>(repeating: inv)
-            }
-        }
-
         // Glass sphere
         let globeMesh = MeshResource.generateSphere(radius: 0.17)
         var glassMat = SimpleMaterial()
