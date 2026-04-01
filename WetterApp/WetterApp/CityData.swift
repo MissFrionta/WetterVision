@@ -39,9 +39,9 @@ struct CityData {
     /// Dummy weather for each city — keyed by city name.
     static let dummyWeather: [String: WeatherInfo] = [
         // --- TEST: Alle Städte auf gleiches Wetter zum Testen ---
-        "Berlin":   WeatherInfo(condition: .snowy,   temperature: -2, humidity: 85, windSpeed: 12, description: "Schnee"),
-        "New York": WeatherInfo(condition: .snowy,   temperature: -1, humidity: 80, windSpeed: 15, description: "Schnee"),
-        "Tokio":    WeatherInfo(condition: .snowy,   temperature: 0,  humidity: 78, windSpeed: 8,  description: "Schnee"),
+        "Berlin":   WeatherInfo(condition: .windy,   temperature: 10, humidity: 50, windSpeed: 55, description: "Windig"),
+        "New York": WeatherInfo(condition: .windy,   temperature: 12, humidity: 45, windSpeed: 60, description: "Windig"),
+        "Tokio":    WeatherInfo(condition: .windy,   temperature: 16, humidity: 55, windSpeed: 50, description: "Windig"),
         "London":   WeatherInfo(condition: .cloudy, temperature: 10, humidity: 80, windSpeed: 25, description: "Stark bewölkt"),
     ]
 }
