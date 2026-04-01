@@ -150,7 +150,21 @@ struct WeatherEffects {
             }
         }
 
-        c.flush(into: parent)
+        let cloudRoot = Entity()
+        cloudRoot.name = "clouds"
+        c.flush(into: cloudRoot)
+        parent.addChild(cloudRoot)
+
+        // Slow drift — update every 200ms to avoid overwhelming the renderer
+        Task { @MainActor in
+            var angle: Float = 0
+            while !Task.isCancelled {
+                guard cloudRoot.parent != nil else { break }
+                try? await Task.sleep(for: .milliseconds(200))
+                angle += 0.003
+                cloudRoot.orientation = simd_quatf(angle: angle, axis: SIMD3<Float>(0, 1, 0))
+            }
+        }
     }
 
     // MARK: - Rain (Particle System)
@@ -243,12 +257,12 @@ struct WeatherEffects {
         emitter.speed = 0.02
         emitter.mainEmitter.lifeSpan = 1.0
 
-        // Small, faint streaks blown sideways
-        emitter.mainEmitter.size = 0.002
-        emitter.mainEmitter.stretchFactor = 6.0
-        emitter.mainEmitter.color = .constant(.single(UIColor(white: 0.85, alpha: 0.3)))
+        // Visible streaks blown sideways
+        emitter.mainEmitter.size = 0.004
+        emitter.mainEmitter.stretchFactor = 10.0
+        emitter.mainEmitter.color = .constant(.single(UIColor(white: 0.80, alpha: 0.5)))
         // Strong sideways push (X), slight downward pull
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0.4, -0.1, 0.1)
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0.5, -0.08, 0.15)
 
         windEntity.components.set(emitter)
         parent.addChild(windEntity)
