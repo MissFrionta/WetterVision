@@ -27,6 +27,14 @@ enum WeatherCondition: String, CaseIterable {
     case stormy  = "Gewitter"
 }
 
+/// One day of weather forecast.
+struct DayForecast {
+    let date: Date
+    let condition: WeatherCondition
+    let tempHigh: Int    // °C
+    let tempLow: Int     // °C
+}
+
 /// Central data source for cities and weather.
 struct CityData {
     static let defaultCities: [City] = [

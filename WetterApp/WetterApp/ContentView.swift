@@ -22,6 +22,7 @@ struct ContentView: View {
     @State private var snowGlobePinchStart: Float = 0.85
 
     @State private var globeEntity: Entity?
+    @State private var selectedDayIndex: Int = 0
 
     var body: some View {
         RealityView { content, attachments in
@@ -120,7 +121,11 @@ struct ContentView: View {
 
             if let city = selectedCity {
                 Attachment(id: "weather-panel") {
-                    WeatherPanelView(city: city, weatherService: weatherService)
+                    WeatherPanelView(
+                        city: city,
+                        weatherService: weatherService,
+                        selectedDay: $selectedDayIndex
+                    )
                 }
             }
         }
@@ -219,6 +224,7 @@ struct ContentView: View {
         snowGlobeDragStart = simd_quatf(angle: 0, axis: SIMD3(0, 1, 0))
         snowGlobeScale = 0.85
         snowGlobePinchStart = 0.85
+        selectedDayIndex = 0
         selectedCity = cities.first { $0.name == cityName }
     }
 
@@ -251,21 +257,30 @@ struct ContentView: View {
         let root = globeEntity?.parent
 
         if let city = selectedCity {
-            let targetName = "snowglobe-\(city.name)"
+            // Encode day index in name so changing the day triggers a rebuild
+            let targetName = "snowglobe-\(city.name)-\(selectedDayIndex)"
 
             // Check if correct snow globe already exists (by searching scene graph)
             if root?.children.contains(where: { $0.name == targetName }) == true {
-                return // Same city, nothing to do
+                return // Same city + same day, nothing to do
             }
 
             // Remove any existing snow globe
             removeSnowGlobe(root: root)
 
-            // Create new snow globe with weather condition
-            // Use real weather from API, fall back to dummy data
-            let weather = weatherService.weather[city.name] ?? CityData.dummyWeather[city.name]
-            let condition = weather?.condition ?? .cloudy
+            // Get weather condition for selected day
+            let condition: WeatherCondition
+            if selectedDayIndex == 0 {
+                condition = (weatherService.weather[city.name] ?? CityData.dummyWeather[city.name])?.condition ?? .cloudy
+            } else if let forecast = weatherService.forecasts[city.name],
+                      selectedDayIndex < forecast.count {
+                condition = forecast[selectedDayIndex].condition
+            } else {
+                condition = .cloudy
+            }
+
             let newGlobe = VoxelBuilder.buildSnowGlobe(for: city.name, condition: condition)
+            newGlobe.name = targetName
             newGlobe.position = SIMD3<Float>(0.20, 0.0, 0.0)
             newGlobe.scale = SIMD3<Float>(repeating: snowGlobeScale)
 
@@ -292,18 +307,46 @@ struct ContentView: View {
 struct WeatherPanelView: View {
     let city: City
     var weatherService: WeatherService
+    @Binding var selectedDay: Int
+
+    private var forecasts: [DayForecast] {
+        weatherService.forecasts[city.name] ?? []
+    }
+
+    private var maxDays: Int {
+        max(forecasts.count, 1)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            // City name + day navigation
             HStack {
                 Circle()
                     .fill(Color(city.pinColor))
                     .frame(width: 10, height: 10)
                 Text(city.name)
                     .font(.headline)
+                Spacer()
             }
 
-            if let weather = weatherService.weather[city.name] ?? CityData.dummyWeather[city.name] {
+            // Day selector with arrows
+            HStack {
+                Text(selectedDay > 0 ? "‹" : " ")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(selectedDay > 0 ? .primary : .clear)
+                Spacer()
+                Text(dayLabel(for: selectedDay))
+                    .font(.system(size: 12, weight: .semibold))
+                Spacer()
+                Text(selectedDay < maxDays - 1 ? "›" : " ")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(selectedDay < maxDays - 1 ? .primary : .clear)
+            }
+
+            // Weather info for selected day
+            if selectedDay == 0,
+               let weather = weatherService.weather[city.name] ?? CityData.dummyWeather[city.name] {
+                // Today: show full current weather
                 HStack(spacing: 16) {
                     Label("\(weather.temperature)°C", systemImage: "thermometer")
                     Label(weather.condition.rawValue, systemImage: weatherIcon(weather.condition))
@@ -316,16 +359,57 @@ struct WeatherPanelView: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            } else if selectedDay < forecasts.count {
+                // Forecast day: show high/low + condition
+                let day = forecasts[selectedDay]
+                HStack(spacing: 16) {
+                    Label("\(day.tempHigh)° / \(day.tempLow)°", systemImage: "thermometer")
+                    Label(day.condition.rawValue, systemImage: weatherIcon(day.condition))
+                }
+                .font(.subheadline)
+            }
 
-                Text(weather.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            // Dot indicators
+            if maxDays > 1 {
+                HStack(spacing: 4) {
+                    Spacer()
+                    ForEach(0..<min(maxDays, 7), id: \.self) { i in
+                        Circle()
+                            .fill(i == selectedDay ? Color.white : Color.white.opacity(0.3))
+                            .frame(width: 5, height: 5)
+                    }
+                    Spacer()
+                }
             }
         }
         .padding(14)
         .background(.ultraThinMaterial)
         .cornerRadius(12)
         .frame(width: 200)
+        .gesture(
+            DragGesture(minimumDistance: 20)
+                .onEnded { value in
+                    if value.translation.width < -30 && selectedDay < maxDays - 1 {
+                        selectedDay += 1
+                    } else if value.translation.width > 30 && selectedDay > 0 {
+                        selectedDay -= 1
+                    }
+                }
+        )
+    }
+
+    private func dayLabel(for index: Int) -> String {
+        switch index {
+        case 0: return "Heute"
+        case 1: return "Morgen"
+        case 2: return "Übermorgen"
+        default:
+            guard index < forecasts.count else { return "Tag \(index + 1)" }
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "de_DE")
+            formatter.dateFormat = "EEEE"
+            return formatter.string(from: forecasts[index].date).capitalized
+        }
     }
 
     private func weatherIcon(_ condition: WeatherCondition) -> String {
