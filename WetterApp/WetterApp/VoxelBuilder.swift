@@ -668,6 +668,54 @@ struct VoxelBuilder {
         // Street lamp
         buildStreetLamp(collector: c, gx: -6, gz: -4)
         buildStreetLamp(collector: c, gx: 18, gz: -2)
+
+        // --- Snow cover (only when snowy) ---
+        if isSnowy {
+            let snowCover = UIColor(red: 0.92, green: 0.93, blue: 0.96, alpha: 1)
+
+            // Empire State roofs (3 tiers)
+            for dx in -5..<5 { for dz in -5..<5 {
+                c.add(color: snowCover, x: 0 + dx, y: 17, z: 0 + dz)
+            }}
+            for dx in -3..<3 { for dz in -3..<3 {
+                c.add(color: snowCover, x: 0 + dx, y: 31, z: 0 + dz)
+            }}
+            for dx in -2..<2 { for dz in -2..<2 {
+                c.add(color: snowCover, x: 0 + dx, y: 39, z: 0 + dz)
+            }}
+
+            // Skyscraper roofs
+            for dx in 0..<8 { for dz in 0..<6 {
+                c.add(color: snowCover, x: -14 + dx, y: 29, z: -6 + dz)
+            }}
+            for dx in 0..<8 { for dz in 0..<6 {
+                c.add(color: snowCover, x: 8 + dx, y: 23, z: -4 + dz)
+            }}
+            for dx in 0..<6 { for dz in 0..<8 {
+                c.add(color: snowCover, x: -12 + dx, y: 19, z: 8 + dz)
+            }}
+            for dx in 0..<10 { for dz in 0..<6 {
+                c.add(color: snowCover, x: 6 + dx, y: 15, z: 10 + dz)
+            }}
+
+            // Statue of Liberty crown + torch
+            c.add(color: snowCover, x: 14, y: 16, z: -14)
+            c.add(color: snowCover, x: 16, y: 18, z: -14)
+
+            // Linden tree crowns (Central Park)
+            let nyTreePositions = [(-14, -14), (-11, -12)]
+            for (tx, tz) in nyTreePositions {
+                for dx in (-3)...3 { for dz in (-3)...3 {
+                    let dist = dx * dx + dz * dz
+                    if dist <= 9 {
+                        c.add(color: snowCover, x: tx + dx, y: 17, z: tz + dz)
+                    }
+                    if dist <= 4 {
+                        c.add(color: snowCover, x: tx + dx, y: 16, z: tz + dz)
+                    }
+                }}
+            }
+        }
     }
 
     private static func buildEmpireState(collector c: VoxelCollector, gx: Int, gz: Int) {
@@ -911,6 +959,51 @@ struct VoxelBuilder {
         for (sx, sz) in pathStones {
             c.add(color: Palette.stone, x: sx, y: 0, z: sz)
             c.add(color: Palette.stoneDark, x: sx + 1, y: 0, z: sz)
+        }
+
+        // --- Snow cover (only when snowy) ---
+        if isSnowy {
+            let snowCover = UIColor(red: 0.92, green: 0.93, blue: 0.96, alpha: 1)
+
+            // Pagoda roofs (3 tiers) — roof extends beyond walls
+            for dx in (-9)...9 { for dz in (-9)...9 {
+                if abs(dx) + abs(dz) <= 12 {
+                    c.add(color: snowCover, x: -8 + dx, y: 10, z: -2 + dz)
+                }
+            }}
+            for dx in (-7)...7 { for dz in (-7)...7 {
+                if abs(dx) + abs(dz) <= 9 {
+                    c.add(color: snowCover, x: -8 + dx, y: 18, z: -2 + dz)
+                }
+            }}
+            for dx in (-5)...5 { for dz in (-5)...5 {
+                if abs(dx) + abs(dz) <= 7 {
+                    c.add(color: snowCover, x: -8 + dx, y: 26, z: -2 + dz)
+                }
+            }}
+
+            // Torii gate top
+            for dx in (-6)...6 {
+                c.add(color: snowCover, x: 6 + dx, y: 19, z: -12)
+            }
+
+            // Cherry tree crowns — top 2 layers white
+            let tokioTreePositions = [(12, -6), (-16, -14), (14, 2)]
+            for (tx, tz) in tokioTreePositions {
+                for dx in (-3)...3 { for dz in (-3)...3 {
+                    let dist = dx * dx + dz * dz
+                    if dist <= 9 {
+                        c.add(color: snowCover, x: tx + dx, y: 17, z: tz + dz)
+                    }
+                    if dist <= 4 {
+                        c.add(color: snowCover, x: tx + dx, y: 16, z: tz + dz)
+                    }
+                }}
+            }
+
+            // Stone lantern tops
+            c.add(color: snowCover, x: 0, y: 12, z: -14)
+            c.add(color: snowCover, x: 12, y: 12, z: -14)
         }
     }
 

@@ -213,8 +213,8 @@ struct WeatherEffects {
         // Larger particles with subtle blue tint for visibility against white ground
         emitter.mainEmitter.size = 0.005
         emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.90, green: 0.93, blue: 1.0, alpha: 0.85)))
-        // Very gentle gravity + slight wind drift — snowflakes float sideways
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0.03, -0.08, 0.01)
+        // Very gentle gravity — snowflakes fall straight down
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.08, 0)
 
         snowEntity.components.set(emitter)
         parent.addChild(snowEntity)

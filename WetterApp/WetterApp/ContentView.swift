@@ -99,7 +99,7 @@ struct ContentView: View {
                                 // Acceleration scales with s so fall speed matches globe size
                                 let baseAccel: SIMD3<Float>
                                 switch child.name {
-                                case "snow":    baseAccel = SIMD3<Float>(0.03, -0.08, 0.01)
+                                case "snow":    baseAccel = SIMD3<Float>(0, -0.08, 0)
                                 case "rain":    baseAccel = SIMD3<Float>(0.06, -0.5, 0.02)
                                 case "drizzle": baseAccel = SIMD3<Float>(0.02, -0.3, 0.01)  // matches addDrizzle
                                 case "wind":    baseAccel = SIMD3<Float>(0.4, -0.1, 0.1)
