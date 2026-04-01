@@ -44,7 +44,7 @@ Stand: 2026-03-18
 ## Bekannte Bugs / Offene Probleme
 
 ### HOCH (muss gefixt werden)
-- [ ] **Schnee-Partikel flackern in Berlin** — Fix implementiert (2026-04-01), muss auf AVP getestet werden. Änderungen: (1) Weißes Mega-Mesh aufgeteilt — Schneedecke auf Dächern/Bäumen nutzt jetzt leicht bläuliches Weiß (snowCover), erzwingt separates Mesh vom Boden-Schnee. (2) Partikel-Parameter optimiert: größer (0.005 statt 0.003), höhere birthRate (350 statt 200), dezenter Blau-Stich, langsamere Beschleunigung (-0.4 statt -0.5). Falls Flickering weiterhin besteht → nächster Schritt: Partikel außerhalb der Schneekugel-Hierarchie platzieren.
+- [x] ~~**Schnee-Partikel flackern in Berlin**~~ — GEFIXT (2026-04-01, auf AVP bestaetigt). Ursache: riesiges weisses Mesh (Boden+Schneedecke ~24k Vertices) verursachte Rendering-Konflikte mit Partikel-System bei Skalierung. Fix: (1) Mesh-Splitting: Schneedecke nutzt eigene Farbe (snowCover), erzwingt separates Mesh. (2) Counter-Scale auf Partikel-Entities mit dynamischer Kompensation von emitterShapeSize, birthRate und acceleration. (3) Partikel optimiert: groesser, blauer Stich, sanfteres Driften.
 
 ### Mittel (sollte gefixt werden)
 - [ ] **Farbwechsel-Bug beim Drehen** — Voxels mit Checkerboard-Farbmuster (z.B. Teich, Gras) aendern ihre sichtbare Farbe, wenn die Schneekugel gedreht wird. Ursache: benachbarte Voxels verschiedener Farben zeigen je nach Blickwinkel verschiedene Seiten. Workaround: einheitliche Farbe verwenden (wie beim Teichrand gemacht). Fuer Gras/Boden tolerierbar.
@@ -54,52 +54,22 @@ Stand: 2026-03-18
 
 ---
 
-## BUG-ANALYSE: Schnee-Partikel flackern in Berlin (Stand 2026-03-25)
+## BUG-ANALYSE: Schnee-Partikel flackern in Berlin — GELOEST (2026-04-01)
 
-### Symptom
-- Schneepartikel in Berlin erscheinen und verschwinden periodisch ("Flickering")
-- Wird schlimmer bei groesserer Schneekugel-Skalierung
-- Mal schneit es normal, dann verschwindet der Schnee komplett, dann kommt er wieder
+### Symptom (war)
+- Schneepartikel in Berlin erschienen und verschwanden periodisch ("Flickering")
+- Wurde schlimmer bei groesserer Schneekugel-Skalierung
 - Auf echter Apple Vision Pro reproduzierbar
 
-### Bewiesene Fakten
-1. **Regen in New York flackert NICHT** — auch nicht bei verschiedenen Skalierungen
-2. **Schnee mit identischen Regen-Parametern flackert trotzdem** — also gleiche birthRate, speed, acceleration, lifeSpan, emitterShape wie Regen, nur weisse Farbe und kein stretchFactor. Flackert in Berlin weiterhin.
-3. **Problem ist Berlin-spezifisch, nicht partikel-spezifisch** — gleicher Emitter-Code verhält sich in Berlin anders als in NY
+### Ursache
+Zwei Faktoren zusammen:
+1. **Riesiges weisses Mesh**: Boden-Schnee + Dach-Schneedecke wurden zu EINEM ModelEntity gemerged (~24.000 Vertices). Dieses Mega-Mesh verursachte Rendering-Konflikte mit dem Partikel-System.
+2. **Skalierungs-Problem**: Partikel-Entity skalierte mit der Schneekugel, was bei groesseren Scales zu Rendering-Artefakten fuehrte.
 
-### Was Berlin anders macht als New York
-| Aspekt | Berlin (flackert) | New York (flackert nicht) |
-|---|---|---|
-| Boden | Weisser Schneeboden (UIColor white 0.95) | Beton (concrete/concreteDark) |
-| Boden-Funktion | Inline Snow-Ground (nur 1 Farbe) | buildConcreteGround (2 Farben) |
-| Extra-Voxels | Schneedecke auf allen Daechern/Baeumen/Mauer | Keine Extra-Schicht |
-| Wolken-Typ | addClouds(dark: false) = helle Wolken | addClouds(dark: true) = dunkle Wolken |
-| Wetter-Effekte | Wolken + Schnee-Partikel | Wolken + Regen + Blitz (mit Task) |
-| Szene-Rotation | Keine initiale Rotation | 45° Y-Rotation (fuer Freiheitsstatue) |
-| Partikel-Farbe | Weiss auf weissem Boden | Blau auf grauem Beton |
-
-### Was bereits versucht wurde (alles OHNE Erfolg)
-1. **Verschiedene Emitter-Parameter** — speed, acceleration, lifeSpan, birthRate variiert (von langsam/sparsam bis identisch zum Regen)
-2. **emissionDuration/idleDuration** — Existiert nicht auf visionOS 2 ParticleEmitterComponent
-3. **timing = .repeating(...)** — API-Syntax-Fehler, existiert nicht mit duration-Parameter
-4. **Counter-Scale auf Partikel-Entity** — Inverse Scale auf snow/rain-Entity um effektive Scale 1.0 zu halten. Hat Problem VERSCHLIMMERT (zusaetzliche Transform-Writes)
-5. **@State snowGlobeEntity entfernt** — War ein @State-Write in der update-Closure der eine Update-Schleife ausloeste. Entfernt, hat Flickering nicht geloest.
-6. **isEmitting = true** — Kein Effekt
-
-### Moegliche naechste Schritte (noch nicht versucht)
-1. **Berlin temporaer auf Regen umstellen** — Bestaetigt ob das Problem wirklich an der Berlin-SZENE liegt und nicht doch an der Schnee-Partikel-Konfiguration
-2. **Schneedecke entfernen** — Testen ob die extra weissen Voxels auf Daechern/Baeumen das Problem verursachen (mehr Geometrie → Performance-Drop → Partikel-Stutter?)
-3. **Weissen Boden durch Gras ersetzen** — Testen ob das Problem am weissen Boden liegt (evtl. Z-Fighting oder Render-Konflikte zwischen weissen Voxels und weissen Partikeln)
-4. **Helle Wolken durch dunkle ersetzen** — `addClouds(dark: false)` → `addClouds(dark: true)` testen. Evtl. rendern helle Wolken + weisse Partikel schlecht zusammen
-5. **Partikel ausserhalb der Schneekugel-Hierarchie platzieren** — Snow-Entity nicht als Child des Snow-Globe, sondern als Sibling auf Scene-Root. Dann wird es nicht vom Snow-Globe-Scale beeinflusst
-6. **Berlin-Szene vereinfachen** — Temporaer Landmarks reduzieren um Performance als Ursache auszuschliessen
-7. **Partikel-Farbe aendern** — Leicht blaeuliches Weiss oder groessere Partikel testen, um visuellen Kontrast zum weissen Boden zu erhoehen (falls das "Flickering" teilweise ein Sichtbarkeitsproblem ist)
-8. **Andere Partikel-Shape** — .sphere statt .plane als emitterShape testen
-
-### Aktueller Stand der Dateien
-- **WeatherEffects.swift addSnow()**: Identische Parameter wie addRain(), nur weiss + kein stretchFactor + birthRate 200
-- **ContentView.swift**: snowGlobeEntity @State entfernt, keine Counter-Scale-Logik
-- **VoxelBuilder.swift buildBerlinScene()**: Weisser Schneeboden + Schneedecke auf allen Objekten
+### Loesung (3 Teile)
+1. **Mesh-Splitting** (VoxelBuilder.swift): Schneedecke auf Daechern/Baeumen nutzt jetzt `snowCover` (RGB 0.92/0.93/0.96) statt `snow` (white 0.95). VoxelCollector erzeugt dadurch zwei separate, kleinere Meshes. Visuell kaum sichtbar, realistischer Blau-Stich.
+2. **Counter-Scale mit Kompensation** (ContentView.swift): Partikel-Entities bekommen inverse Skalierung (1/snowGlobeScale), aber emitterShapeSize (×s), birthRate (×s²) und acceleration (×s) werden dynamisch kompensiert. Partikel rendern stabil UND der Emitter-Bereich passt zur Kugelgroesse.
+3. **Partikel-Optimierung** (WeatherEffects.swift): Groessere Flocken (0.005), dezenter Blau-Stich, sanftes Driften (accel -0.08, speed 0.003, lifeSpan 2.0). Regen: laengere lifeSpan (1.15) damit Tropfen den Boden erreichen.
 
 ---
 
@@ -320,3 +290,11 @@ Referenz-Commit mit funktionierenden Gesten: **f4937e1**
   - 2 Fire Hydrants, 2 Strassenlaternen
   - Bodenplatte radius 22 (Beton)
   - Palette erweitert: libertyGreen/libertyGreenDk fuer Freiheitsstatue
+
+### Session 2026-04-01
+- [x] **Berlin Schnee-Flickering gefixt** (auf AVP bestaetigt):
+  - Mesh-Splitting: Schneedecke-Farbe (snowCover) getrennt vom Boden-Schnee
+  - Counter-Scale + dynamische Kompensation (emitterShapeSize, birthRate, acceleration)
+  - Partikel optimiert: groesser, blauer Stich, sanftes Driften
+- [x] **Regen-Reichweite** — lifeSpan erhoeht (0.95→1.15), Tropfen erreichen den Boden
+- [x] **Schneefall-Physik** — deutlich langsamer, realistisches Flocken-Driften statt Regen-Geschwindigkeit
