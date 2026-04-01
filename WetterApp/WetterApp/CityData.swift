@@ -33,6 +33,7 @@ struct DayForecast {
     let condition: WeatherCondition
     let tempHigh: Int    // °C
     let tempLow: Int     // °C
+    let windSpeed: Int   // km/h
 }
 
 /// Central data source for cities and weather.

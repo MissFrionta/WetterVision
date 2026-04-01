@@ -347,26 +347,37 @@ struct WeatherPanelView: View {
             if selectedDay == 0,
                let weather = weatherService.weather[city.name] ?? CityData.dummyWeather[city.name] {
                 // Today: show full current weather
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     Label("\(weather.temperature)°C", systemImage: "thermometer")
                     Label(weather.condition.rawValue, systemImage: weatherIcon(weather.condition))
                 }
                 .font(.subheadline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     Label("\(weather.humidity)%", systemImage: "humidity")
                     Label("\(weather.windSpeed) km/h", systemImage: "wind")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
             } else if selectedDay < forecasts.count {
-                // Forecast day: show high/low + condition
+                // Forecast day: show high/low + condition + wind
                 let day = forecasts[selectedDay]
-                HStack(spacing: 16) {
-                    Label("\(day.tempHigh)° / \(day.tempLow)°", systemImage: "thermometer")
+                HStack(spacing: 12) {
+                    Label("\(day.tempHigh)°/\(day.tempLow)°", systemImage: "thermometer")
                     Label(day.condition.rawValue, systemImage: weatherIcon(day.condition))
                 }
                 .font(.subheadline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+                HStack(spacing: 16) {
+                    Label("\(day.windSpeed) km/h", systemImage: "wind")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             // Dot indicators

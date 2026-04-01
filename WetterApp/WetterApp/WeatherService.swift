@@ -38,7 +38,7 @@ class WeatherService {
     }
 
     private func fetchWeather(lat: Float, lon: Float) async throws -> (WeatherInfo, [DayForecast]) {
-        let urlString = "https://api.open-meteo.com/v1/forecast?latitude=\(lat)&longitude=\(lon)&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7"
+        let urlString = "https://api.open-meteo.com/v1/forecast?latitude=\(lat)&longitude=\(lon)&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max&timezone=auto&forecast_days=7"
         guard let url = URL(string: urlString) else {
             throw URLError(.badURL)
         }
@@ -68,7 +68,8 @@ class WeatherService {
                 date: date,
                 condition: dayCondition,
                 tempHigh: Int(response.daily.temperature_2m_max[i]),
-                tempLow: Int(response.daily.temperature_2m_min[i])
+                tempLow: Int(response.daily.temperature_2m_min[i]),
+                windSpeed: Int(response.daily.wind_speed_10m_max[i])
             ))
         }
 
@@ -116,4 +117,5 @@ private struct DailyWeather: Decodable {
     let weather_code: [Int]
     let temperature_2m_max: [Double]
     let temperature_2m_min: [Double]
+    let wind_speed_10m_max: [Double]
 }
