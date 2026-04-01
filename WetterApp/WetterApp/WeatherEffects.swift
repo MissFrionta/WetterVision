@@ -161,8 +161,8 @@ struct WeatherEffects {
         emitter.mainEmitter.birthRate = 300
         // Tiny initial speed (plane emits upward by default, but gravity overwhelms immediately)
         emitter.speed = 0.01
-        // Drops fall from y=0.10 to ground (~y=-0.07): takes ~0.85s at acceleration -0.5
-        emitter.mainEmitter.lifeSpan = 0.95
+        // Drops fall from y=0.10 past ground (~y=-0.10): longer lifeSpan so rain reaches the floor
+        emitter.mainEmitter.lifeSpan = 1.15
 
         // Rain drops: visible streaks falling down
         emitter.mainEmitter.size = 0.004
@@ -186,15 +186,15 @@ struct WeatherEffects {
         emitter.emitterShape = .plane
         emitter.emitterShapeSize = SIMD3<Float>(0.10, 0.01, 0.10)
         emitter.mainEmitter.birthRate = 350
-        emitter.speed = 0.005
-        // Longer lifeSpan for slow drift from clouds to ground
-        emitter.mainEmitter.lifeSpan = 2.5
+        emitter.speed = 0.003
+        // Shorter lifeSpan — snow settles above ground, doesn't reach the floor
+        emitter.mainEmitter.lifeSpan = 2.0
 
         // Larger particles with subtle blue tint for visibility against white ground
         emitter.mainEmitter.size = 0.005
         emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.90, green: 0.93, blue: 1.0, alpha: 0.85)))
-        // Gentle gravity — snowflakes drift slowly, not fall like rain
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.12, 0)
+        // Very gentle gravity — snowflakes drift and float down
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.08, 0)
 
         snowEntity.components.set(emitter)
         parent.addChild(snowEntity)
