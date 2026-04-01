@@ -160,25 +160,24 @@ Tokio hat folgende Extras bekommen, die auch fuer andere Staedte sinnvoll waeren
 
 ## Naechste Features (geplant)
 
-### HOCH — als Naechstes umsetzen
-- [ ] **Echte Wetter-API (Open-Meteo)** — Explizit als optionaler Bonus in der Aufgabenstellung genannt. Open-Meteo ist kostenlos, kein API-Key noetig. REST-Call liefert Temperatur, Luftfeuchtigkeit, Wind, Wetter-Code. Schneekugel zeigt dann das echte aktuelle Wetter der Stadt. Mapping von Open-Meteo WMO-Codes auf WeatherCondition. (~2-3h)
-- [ ] **Wolken-Animation** — Wolken langsam driften lassen (leichte Position-Verschiebung ueber Zeit oder sanfte Y-Rotation). Aktuell statisch, wirkt mit Bewegung deutlich lebendiger. (~30min)
-- [ ] **Wind-Effekt auf Partikel** — Schneeflocken/Regentropfen seitlich driften lassen basierend auf Windgeschwindigkeit/Windrichtung. Einfache X/Z-Komponente in der Partikel-Acceleration. (~30min)
-
-### MITTEL — wenn Zeit reicht
-- [ ] **Erweitertes Weather-Panel** — Mehr Wetter-Infos: Vorhersage naechste Stunden/Tage, Windrichtung als Pfeil, Sonnenauf-/untergang, "Gefuehlt wie"-Temperatur. Daten aus der gleichen Open-Meteo API. (~1-2h)
-- [ ] **Tag/Nacht-Anpassung** — Himmelfarbe/Beleuchtung basierend auf aktueller Uhrzeit der Stadt. Nachts dunklerer Hintergrund, Fenster leuchten gelb, Laternen an. (~1-2h)
-- [ ] **Wetter-Icons auf Globus** — Kleine Wetter-Symbole (Sonne/Wolke/Regen) neben den Stadt-Labels auf dem Globus. (~30min-1h)
-
-### NIEDRIG — nice to have
-- [ ] **Mehr Staedte hinzufuegen** — z.B. Sydney, Kairo, Rio, Moskau (brauchen jeweils neue Voxel-Szenen, zeitintensiv)
-- [ ] **2D-Begleitfenster** — Separates SwiftUI-Window mit Einstellungen/Staedteliste
-- [ ] **Schneekugel-Widgets** — Schneekugeln als platzierbare Widgets im Raum (Shared Space / Immersive Space)
-- [ ] **Schneekugel-Schuettel-Animation** — Physik-basiertes Aufwirbeln der Partikel
-
-### Erledigt
+### Erledigt (Session 2026-04-01, Branch feature/dynamic-weather)
+- [x] ~~**Echte Wetter-API (Open-Meteo)**~~ — WeatherService.swift: REST-Call an Open-Meteo, WMO-Code-Mapping, 10-Min-Cache, Fallback auf Dummy-Daten. Auf AVP bestaetigt.
+- [x] ~~**Dynamisches Wetter fuer alle Staedte**~~ — Jede Stadt kann jedes Wetter haben. Boden wechselt (Schnee/Gras/Beton), Schneedecke nur bei .snowy. buildSnowGlobe() bekommt condition-Parameter.
+- [x] ~~**Nieselregen (.drizzle)**~~ — Feiner, langsamer Regen mit hellen Wolken. Auf AVP bestaetigt.
+- [x] ~~**Wolken-Animation**~~ — Langsame Y-Rotation (200ms Update-Intervall). Auf AVP bestaetigt.
+- [x] ~~**Wind-Drift auf Regen**~~ — Leichte seitliche X/Z-Komponente in Regen-Acceleration.
 - [x] ~~Verfeinerung der Voxel-Aufloesung fuer mehr Detail~~ — Tokio auf 2x umgebaut
 - [x] ~~Apple-Globus-Modell aus Reality Composer Pro~~ — Earth.usdz eingebunden
+
+### Nicht umgesetzt / Verschoben
+- [ ] **Windig (.windy)** — Partikel-Effekt funktionierte nicht zufriedenstellend auf AVP, entfernt. Kann spaeter erneut versucht werden.
+- [ ] **Erweitertes Weather-Panel** — Vorhersage, Windrichtung, Sonnenauf-/untergang
+- [ ] **Tag/Nacht-Anpassung** — Beleuchtung basierend auf Uhrzeit
+- [ ] **Wetter-Icons auf Globus** — Symbole neben Stadt-Labels
+- [ ] **Mehr Staedte** — Brauchen neue Voxel-Szenen
+- [ ] **2D-Begleitfenster** — Separates SwiftUI-Window
+- [ ] **Schneekugel-Widgets** — Platzierbar im Raum
+- [ ] **Schneekugel-Schuettel-Animation** — Physik-basiert
 
 ---
 
@@ -315,3 +314,21 @@ Referenz-Commit mit funktionierenden Gesten: **f4937e1**
   - Scale-Limits: Globus max 2.0→1.5x, Schneekugel max 1.5→1.2x (kein Overlap mehr)
   - Weather-Panel dynamisch vor Schneekugel positioniert (y=Basis-Hoehe, z=vor Glaskugel)
   - Panel verschwindet nicht mehr im Volume-Boden bei grosser Skalierung
+- [x] **Dynamisches Wetter fuer alle Staedte** (Branch: feature/dynamic-weather, auf AVP bestaetigt):
+  - buildSnowGlobe() bekommt WeatherCondition als Parameter
+  - Berlin: Beton-Boden bei Nicht-Schnee, Schneeboden + Schneedecke bei .snowy
+  - New York: Beton/Schnee-Boden je nach Wetter, Schneedecke auf Daechern/Statue/Baeumen
+  - Tokio: Gras/Schnee-Boden je nach Wetter, Schneedecke auf Pagode/Torii/Baeumen
+  - buildSnowGround() Hilfsfunktion mit Mesh-Splitting (Checkerboard gegen Flickering)
+  - Schneeboden-Mesh in 2 Haelften gesplittet (2 leicht verschiedene Weisstöne)
+- [x] **Nieselregen (.drizzle)** — Neuer WeatherCondition-Case. Feinere Tropfen (0.003), weniger (80 birthRate), langsamer (-0.3 accel), helle Wolken.
+- [x] **Wolken-Animation** — Langsame Y-Rotation per Task (200ms Intervall, ~0.17°/Update). Vorsicht: 50ms Intervall verursacht Partikel-Flickering!
+- [x] **Wind-Drift auf Regen** — Leichte seitliche Acceleration-Komponente (X=0.06, Z=0.02)
+- [x] **Open-Meteo API** (WeatherService.swift):
+  - REST-Call: api.open-meteo.com/v1/forecast mit current-Parametern
+  - WMO-Code-Mapping auf WeatherCondition (0=sunny, 1-3=cloudy, 51-57=drizzle, 61-67=rainy, 71-86=snowy, 95-99=stormy)
+  - 10-Minuten-Cache (fetchAll prueft lastFetch)
+  - Fallback auf CityData.dummyWeather bei Netzwerkfehler
+  - ContentView: .task{} laedt Wetter beim App-Start
+  - WeatherPanelView zeigt echte API-Daten
+- [x] **Alle 6 Wetter-Szenarien getestet** auf echter AVP: sunny, cloudy, drizzle, rainy, snowy, stormy
