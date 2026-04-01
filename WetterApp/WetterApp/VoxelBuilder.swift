@@ -1377,12 +1377,16 @@ struct VoxelBuilder {
     }
 
     private static func buildSnowGround(collector c: VoxelCollector, radius: Int) {
-        let snow = UIColor(white: 0.95, alpha: 1)
+        // Two slightly different whites to split the massive ground mesh into
+        // two smaller meshes — prevents particle flickering (same fix as Berlin)
+        let snowA = UIColor(white: 0.95, alpha: 1)
+        let snowB = UIColor(red: 0.94, green: 0.95, blue: 0.96, alpha: 1)
         for x in -radius...radius {
             for z in -radius...radius {
                 let dist = sqrt(Float(x * x + z * z))
                 guard dist <= Float(radius) + 0.5 else { continue }
-                c.add(color: snow, x: x, y: 0, z: z)
+                let color = (x + z) % 2 == 0 ? snowA : snowB
+                c.add(color: color, x: x, y: 0, z: z)
                 c.add(color: Palette.dirt, x: x, y: -1, z: z)
             }
         }
