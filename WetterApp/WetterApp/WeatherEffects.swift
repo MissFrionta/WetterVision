@@ -150,7 +150,21 @@ struct WeatherEffects {
             }
         }
 
-        c.flush(into: parent)
+        let cloudRoot = Entity()
+        cloudRoot.name = "clouds"
+        c.flush(into: cloudRoot)
+        parent.addChild(cloudRoot)
+
+        // Slow drift animation — clouds rotate gently around Y axis
+        Task { @MainActor in
+            var angle: Float = 0
+            while !Task.isCancelled {
+                guard cloudRoot.parent != nil else { break }
+                try? await Task.sleep(for: .milliseconds(50))
+                angle += 0.002  // ~0.12°/frame at 20fps → full rotation in ~5 minutes
+                cloudRoot.orientation = simd_quatf(angle: angle, axis: SIMD3<Float>(0, 1, 0))
+            }
+        }
     }
 
     // MARK: - Rain (Particle System)
@@ -174,8 +188,8 @@ struct WeatherEffects {
         emitter.mainEmitter.size = 0.004
         emitter.mainEmitter.stretchFactor = 8.0
         emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.5, green: 0.7, blue: 0.95, alpha: 0.7)))
-        // Strong downward pull — overwhelms tiny initial upward speed
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.5, 0)
+        // Strong downward pull + slight wind drift
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0.06, -0.5, 0.02)
 
         rainEntity.components.set(emitter)
         parent.addChild(rainEntity)
@@ -199,8 +213,8 @@ struct WeatherEffects {
         // Larger particles with subtle blue tint for visibility against white ground
         emitter.mainEmitter.size = 0.005
         emitter.mainEmitter.color = .constant(.single(UIColor(red: 0.90, green: 0.93, blue: 1.0, alpha: 0.85)))
-        // Very gentle gravity — snowflakes drift and float down
-        emitter.mainEmitter.acceleration = SIMD3<Float>(0, -0.08, 0)
+        // Very gentle gravity + slight wind drift — snowflakes float sideways
+        emitter.mainEmitter.acceleration = SIMD3<Float>(0.03, -0.08, 0.01)
 
         snowEntity.components.set(emitter)
         parent.addChild(snowEntity)
